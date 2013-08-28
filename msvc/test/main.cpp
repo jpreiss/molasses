@@ -46,6 +46,8 @@ int main()
 
 	screen.update((sf::Uint8 const *)im.raw(), 640, 480, 0, 0);
 
+	screen.copyToImage().saveToFile("../../molasses.png");
+
 	sf::Sprite sprite;
 	sprite.setTexture(screen);
 
