@@ -116,6 +116,15 @@ public:
 		delete[] data_;
 	}
 
+	// default-construct all data
+	void initialize()
+	{
+		for (size_t i = 0; i < rows_ * columns_; ++i)
+		{
+			data_[i] = T();
+		}
+	}
+
 	size_t rows() const
 	{
 		return rows_;

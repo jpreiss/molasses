@@ -7,6 +7,21 @@
 class Mat
 {
 public:
+	Mat()
+	{
+	}
+
+	Mat(float m00, float m01, float m02, float m03,
+		float m10, float m11, float m12, float m13,
+		float m20, float m21, float m22, float m23,
+		float m30, float m31, float m32, float m33)
+	{
+		arr[0][0] = m00; arr[0][1] = m01; arr[0][2] = m02; arr[0][3] = m03;
+		arr[1][0] = m10; arr[1][1] = m11; arr[1][2] = m12; arr[1][3] = m13;
+		arr[2][0] = m20; arr[2][1] = m21; arr[2][2] = m22; arr[2][3] = m23;
+		arr[3][0] = m30; arr[3][1] = m31; arr[3][2] = m32; arr[3][3] = m33;
+	}
+
 	float const &operator()(size_t row, size_t column) const
 	{
 		return arr[row][column];

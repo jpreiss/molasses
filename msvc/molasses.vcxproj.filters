@@ -13,43 +13,37 @@
       <UniqueIdentifier>{67DA6AB6-F800-4c08-8B7A-83BB121AAD01}</UniqueIdentifier>
       <Extensions>rc;ico;cur;bmp;dlg;rc2;rct;bin;rgs;gif;jpg;jpeg;jpe;resx;tiff;tif;png;wav;mfcribbon-ms</Extensions>
     </Filter>
-    <Filter Include="Header Files\core">
-      <UniqueIdentifier>{b9133ee6-c39b-4b7a-bc27-e62285ce06f2}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="Header Files\world">
-      <UniqueIdentifier>{4fc473f1-4611-4365-a5db-28d943596a8b}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="Header Files\screen">
-      <UniqueIdentifier>{8ff6b7d7-9252-4749-b607-e78ffb96c1a8}</UniqueIdentifier>
-    </Filter>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="array2d.h">
-      <Filter>Header Files\core</Filter>
+    <ClInclude Include="../array2d.h">
+      <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="util.h">
-      <Filter>Header Files\core</Filter>
+    <ClInclude Include="../camera.h">
+      <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="mat.h">
-      <Filter>Header Files\core</Filter>
+    <ClInclude Include="../image.h">
+      <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="vec.h">
-      <Filter>Header Files\core</Filter>
+    <ClInclude Include="../line.h">
+      <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="camera.h">
-      <Filter>Header Files\world</Filter>
+    <ClInclude Include="../line2d.h">
+      <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="image.h">
-      <Filter>Header Files\core</Filter>
+    <ClInclude Include="../mat.h">
+      <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="line.h">
-      <Filter>Header Files\world</Filter>
+    <ClInclude Include="../projection.h">
+      <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="line2d.h">
-      <Filter>Header Files\screen</Filter>
+    <ClInclude Include="../util.h">
+      <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="projection.h">
-      <Filter>Header Files\screen</Filter>
+    <ClInclude Include="../vec.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\quat.h">
+      <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>
