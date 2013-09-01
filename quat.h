@@ -88,7 +88,7 @@ Quat lerp(const Quat &q1, const Quat &q2, float t)
 	return ((1 - t) * q1 + t * q2).normalized();	
 }
 
-static Quat slerp(const Quat &q1, const Quat &q2, float t) 
+Quat slerp(const Quat &q1, const Quat &q2, float t) 
 {
 	Quat q3;
 	float dp = dot(q1, q2);

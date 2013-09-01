@@ -9,6 +9,11 @@ class Mat
 public:
 	Mat()
 	{
+		for (int row = 0; row < 4; ++row)
+		for (int col = 0; col < 4; ++col)
+		{
+			arr[row][col] = 0;
+		}
 	}
 
 	Mat(float m00, float m01, float m02, float m03,
@@ -44,7 +49,7 @@ public:
 
 	void setCol(int col, Vec const &v)
 	{
-		for (int row = 0; row < 4; ++row)
+		for (int row = 0; row < 3; ++row)
 		{
 			arr[row][col] = v[row];
 		}
@@ -52,7 +57,7 @@ public:
 
 	void setRow(int row, Vec const &v)
 	{
-		for (int col = 0; col < 4; ++col)
+		for (int col = 0; col < 3; ++col)
 		{
 			arr[row][col] = v[col];
 		}
@@ -74,34 +79,30 @@ public:
 	static Mat translation(Vec const &v)
 	{
 		Mat m = Mat::identity();
-		
-		for (int row = 0; row < 3; ++row)
-		{
-			m(row, 3) = v[row];
-		}
+		m.setCol(3, v);
+		m.arr[3][3] = 1.0;
 
 		return m;
 	}
 
-	static Mat fromColumns(Vec const &x, Vec const &y, Vec const &z, Vec const &translation = Vec())
+	static Mat fromColumnsAffine(Vec const &x, Vec const &y, Vec const &z, Vec const &translation = Vec())
 	{
 		Mat m;
 		m.setCol(0, x);
 		m.setCol(1, y);
 		m.setCol(2, z);
 		m.setCol(3, translation);
-		m.arr[3][3] = 1.0;
+		m.arr[3][3] = 1;
 
 		return m;
 	}
 
-	static Mat fromRows(Vec const &x, Vec const &y, Vec const &z, Vec const &translation = Vec())
+	static Mat fromRows33(Vec const &x, Vec const &y, Vec const &z)
 	{
 		Mat m;
 		m.setRow(0, x);
 		m.setRow(1, y);
 		m.setRow(2, z);
-		m.setRow(3, translation);
 		m.arr[3][3] = 1.0;
 
 		return m;
@@ -125,11 +126,17 @@ Mat operator *(float s, Mat const &b)
 
 Vec operator *(Mat const &m, Vec const &v)
 {
-	return Vec(
-		dot(m.row(0), v),
-		dot(m.row(1), v),
-		dot(m.row(2), v),
-		dot(m.row(3), v));
+	float result[] = {0, 0, 0, 0};
+
+	for (int row = 0; row < 4; ++row)
+	{
+		for (int i = 0; i < 4; ++i)
+		{
+			result[row] += m(row, i) * v[i];
+		}
+	}
+
+	return Vec(result);
 }
 
 Mat operator *(Mat const &a, Mat const &b)
@@ -137,9 +144,16 @@ Mat operator *(Mat const &a, Mat const &b)
 	Mat m;
 
 	for (int row = 0; row < 4; ++row)
-	for (int col = 0; col < 4; ++col)
 	{
-		m(row, col) = dot(a.row(row), b.col(col));
+		for (int col = 0; col < 4; ++col)
+		{
+			m(row, col) = 0;
+
+			for (int i = 0; i < 4; ++i)
+			{
+				m(row, col) += a(row, i) * b(i, col);
+			}
+		}
 	}
 
 	return m;

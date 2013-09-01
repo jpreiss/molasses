@@ -106,6 +106,6 @@ Vec cross(Vec const &a, Vec const &b)
 {
 	return Vec(
 		a.y * b.z - a.z * b.y,
-		a.x * b.z - a.z * b.x,
+		a.z * b.x - a.x * b.z,
 		a.x * b.y - a.y * b.x);
 }

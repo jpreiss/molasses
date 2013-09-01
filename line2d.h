@@ -28,7 +28,10 @@ void drawLine2D(Vec const &start, Vec const &end, Image &image, ColorRGBA color)
 	{
 		int xr = x + 0.5;
 		int yr = y + 0.5;
-		image(xr, yr) = color;
+		if ((xr >= 0) && (xr < image.columns()) && (yr >= 0) && (yr < image.rows()))
+		{
+			image(xr, yr) = color;
+		}
 		x += xstep;
 		y += ystep;
 	}
