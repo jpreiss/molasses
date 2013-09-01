@@ -8,6 +8,10 @@
 
 void rotateCube(sf::RenderWindow &window)
 {
+	auto size = window.getSize();
+	int width = size.x;
+	int height = size.y;
+
 	Line cubeLines[] = {
 		Line(Vec(-1, -1, -1), Vec(1, -1, -1)),
 		Line(Vec(1, -1, -1), Vec(1, 1, -1)),
@@ -31,8 +35,8 @@ void rotateCube(sf::RenderWindow &window)
 	cam.position = Vec(3, 0, 0.5);
 
 	sf::Texture screen;
-	screen.create(640, 480);
-	Image im(640, 480);
+	screen.create(width, height);
+	Image im(width, height);
 	sf::Sprite sprite;
 	sprite.setTexture(screen);
 
@@ -55,9 +59,9 @@ void rotateCube(sf::RenderWindow &window)
 		double fov = radians(90);
 		Mat projection = perspectiveProjection(cam, fov, 1, 100);
 		Mat toScreen = Mat::identity();
-		toScreen(0, 0) = 240;
-		toScreen(1, 1) = 240;
-		Mat shift = Mat::translation(Vec(320, 240, 0));
+		toScreen(0, 0) = height / 2;
+		toScreen(1, 1) = height / 2;
+		Mat shift = Mat::translation(Vec(width / 2, height / 2, 0));
 		toScreen = shift * toScreen;
 
 		for (int i = 0; i < 12; ++i)
@@ -73,7 +77,7 @@ void rotateCube(sf::RenderWindow &window)
 			drawLine2D(screenStart, screenEnd, im, ColorRGBA(255.0, 255.0, 255.0));
 		}
 
-		screen.update((sf::Uint8 const *)im.raw(), 640, 480, 0, 0);
+		screen.update((sf::Uint8 const *)im.raw(), width, height, 0, 0);
 
 		if (counter == 100)
 		{
@@ -90,7 +94,7 @@ void rotateCube(sf::RenderWindow &window)
 
 int main()
 {
-    sf::RenderWindow window(sf::VideoMode(640, 480), "Molasses works!");
+    sf::RenderWindow window(sf::VideoMode(1024, 768), "Molasses works!");
 
 	rotateCube(window);
 
