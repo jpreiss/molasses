@@ -4,13 +4,49 @@
 #include "projection.h"
 #include "math.h"
 #include "quat.h"
-
+#include "triangle.h"
+#include "rasterize.h"
 
 void rotateCube(sf::RenderWindow &window)
 {
 	auto size = window.getSize();
 	int width = size.x;
 	int height = size.y;
+
+	Vec cubeVerts[] = {
+		Vec(-1, -1, -1),
+		Vec( 1, -1, -1),
+		Vec( 1,  1, -1),
+		Vec(-1,  1, -1),
+		Vec(-1, -1,  1),
+		Vec( 1, -1,  1),
+		Vec( 1,  1,  1),
+		Vec(-1,  1,  1)
+	};
+
+	int cubeTris[] = {
+		0, 1, 2,
+		0, 2, 3,
+		1, 5, 6,
+		1, 6, 2,
+		5, 4, 7,
+		5, 7, 6,
+		4, 0, 3,
+		4, 3, 7,
+		2, 6, 7,
+		2, 7, 3,
+		0, 4, 5,
+		0, 5, 1
+	};
+
+	ColorRGBA faceColors[] = {
+		ColorRGBA(255, 0, 0),
+		ColorRGBA(0, 255, 0),
+		ColorRGBA(0, 0, 255),
+		ColorRGBA(255, 255, 0),
+		ColorRGBA(0, 255, 255),
+		ColorRGBA(255, 0, 255)
+	};
 
 	Line cubeLines[] = {
 		Line(Vec(-1, -1, -1), Vec(1, -1, -1)),
@@ -32,13 +68,15 @@ void rotateCube(sf::RenderWindow &window)
 	Quat rot = Quat::from_axis_angle(Vec(0, 0, 1), 0.005);
 
 	Camera cam;
-	cam.position = Vec(3, 0, 0.5);
+	cam.position = Vec(4, 0, 1.5);
 
 	sf::Texture screen;
 	screen.create(width, height);
 	Image im(width, height);
 	sf::Sprite sprite;
 	sprite.setTexture(screen);
+
+	Array2D<float> zbuffer(width, height);
 
 	int counter = 0;
 
@@ -51,12 +89,14 @@ void rotateCube(sf::RenderWindow &window)
                 window.close();
         }
 
-		im.initialize();
+		im.fill();
+		zbuffer.fill(std::numeric_limits<float>::max());
+
 		cam.position = rot * cam.position;
 		cam.direction = -cam.position.normalized();
 		cam.up = Vec(0, 0, 1).normalTo(cam.direction).normalized();
 
-		double fov = radians(90);
+		double fov = radians(70);
 		Mat projection = perspectiveProjection(cam, fov, 1, 100);
 		Mat toScreen = Mat::identity();
 		toScreen(0, 0) = height / 2;
@@ -66,15 +106,17 @@ void rotateCube(sf::RenderWindow &window)
 
 		for (int i = 0; i < 12; ++i)
 		{
-			Vec pstart = projection * cubeLines[i].start;
-			pstart = pstart / pstart.w;
-			Vec screenStart = toScreen * pstart;
+			int *tri = cubeTris + (3 * i);
+			Triangle t(cubeVerts[tri[0]], cubeVerts[tri[1]], cubeVerts[tri[2]]);
 
-			Vec pend = projection * cubeLines[i].end;
-			pend = pend / pend.w;
-			Vec screenEnd = toScreen * pend;
+			for (auto it = t.asVecs(); it < t.asVecs() + 3; ++it)
+			{
+				*it = projection * (*it);
+				*it = *it / it->w;
+				*it = toScreen * (*it);
+			}
 
-			drawLine2D(screenStart, screenEnd, im, ColorRGBA(255.0, 255.0, 255.0));
+			rasterize(t, zbuffer, im, faceColors[i / 2]);
 		}
 
 		screen.update((sf::Uint8 const *)im.raw(), width, height, 0, 0);
@@ -94,7 +136,7 @@ void rotateCube(sf::RenderWindow &window)
 
 int main()
 {
-    sf::RenderWindow window(sf::VideoMode(1024, 768), "Molasses works!");
+    sf::RenderWindow window(sf::VideoMode(640, 480), "Molasses works!");
 
 	rotateCube(window);
 

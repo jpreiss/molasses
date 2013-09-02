@@ -23,7 +23,7 @@ Mat perspectiveProjection(Camera const &camera, double fov, double near, double 
 	Mat projection = Mat(xy, 0,  0,                0,
 		                 0,  xy, 0,                0,
 						 0,  0,  1 / (far - near), near / (far - near),
-						 0,  0,  1,                0);
+						 0,  0,  -1,                0);
 
 	return projection * (view * toOrigin);
 }

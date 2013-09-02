@@ -57,3 +57,8 @@ double degrees(double radians)
 {
 	return radians * (180.0 / PI);
 }
+
+bool almostEqual(float a, float b)
+{
+	return abs(a - b) <= std::numeric_limits<float>::epsilon();
+}

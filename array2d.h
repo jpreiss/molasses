@@ -117,11 +117,11 @@ public:
 	}
 
 	// default-construct all data
-	void initialize()
+	void fill(T const &value = T())
 	{
 		for (size_t i = 0; i < rows_ * columns_; ++i)
 		{
-			data_[i] = T();
+			data_[i] = value;
 		}
 	}
 

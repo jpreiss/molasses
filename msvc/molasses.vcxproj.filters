@@ -45,5 +45,14 @@
     <ClInclude Include="..\quat.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="..\rasterize.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\mat2d.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\triangle.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
 </Project>

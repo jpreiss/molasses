@@ -1,6 +1,7 @@
 #pragma once
 
 #include <math.h>
+#include "util.h"
 
 // 4-element vector.  Want to SIMD some day.
 
@@ -108,4 +109,32 @@ Vec cross(Vec const &a, Vec const &b)
 		a.y * b.z - a.z * b.y,
 		a.z * b.x - a.x * b.z,
 		a.x * b.y - a.y * b.x);
+}
+
+Vec vmax(Vec const &a, Vec const &b)
+{
+	return Vec(max(a.x, b.x), max(a.y, b.y), max(a.z, b.z));
+}
+
+Vec vmin(Vec const &a, Vec const &b)
+{
+	return Vec(min(a.x, b.x), min(a.y, b.y), min(a.z, b.z));
+}
+
+template <typename Iter>
+std::pair<Vec, Vec> bounds(Iter begin, Iter end)
+{
+	const float fmax = std::numeric_limits<float>::max();
+	const float fmin = std::numeric_limits<float>::min();
+
+	Vec mins(fmax, fmax, fmax);
+	Vec maxes(fmin, fmin, fmin);
+
+	for (Iter it = begin; it != end; ++it)
+	{
+		mins = vmin(mins, *it);
+		maxes = vmax(maxes, *it);
+	}
+
+	return std::make_pair(mins, maxes);
 }
