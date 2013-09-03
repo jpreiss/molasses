@@ -6,6 +6,29 @@
 #include "quat.h"
 #include "triangle.h"
 #include "rasterize.h"
+#include "image.h"
+
+void toImage(Array2D<Vec> const &colors, Array2D<float> const &zbuffer, Image &img)
+{
+	for (int y = 0; y < colors.rows(); ++y)
+	{
+		for (int x = 0; x < colors.columns(); ++x)
+		{
+			if (zbuffer(y, x) == std::numeric_limits<float>::max())
+			{
+				img(x, y) = ColorRGBA(0, 0, 0);
+			}
+			else
+			{
+				Vec col = 255 * colors(y, x);
+				img(y, x) = ColorRGBA(
+					clamp<unsigned char, float>(col.x),
+					clamp<unsigned char, float>(col.y),
+					clamp<unsigned char, float>(col.z));
+			}
+		}
+	}
+}
 
 void rotateCube(sf::RenderWindow &window)
 {
@@ -39,13 +62,19 @@ void rotateCube(sf::RenderWindow &window)
 		0, 5, 1
 	};
 
-	ColorRGBA faceColors[] = {
-		ColorRGBA(255, 0, 0),
-		ColorRGBA(0, 255, 0),
-		ColorRGBA(0, 0, 255),
-		ColorRGBA(255, 255, 0),
-		ColorRGBA(0, 255, 255),
-		ColorRGBA(255, 0, 255)
+	Vec vertColors[] = {
+		Vec(1, 0, 0),
+		Vec(0, 1, 0),
+		Vec(0, 0, 1),
+		Vec(1, 1, 0),
+		Vec(0, 1, 1),
+		Vec(1, 0, 1),
+		Vec(1, 0, 0),
+		Vec(0, 1, 0),
+		Vec(0, 0, 1),
+		Vec(1, 1, 0),
+		Vec(0, 1, 1),
+		Vec(1, 0, 1)
 	};
 
 	Line cubeLines[] = {
@@ -72,11 +101,12 @@ void rotateCube(sf::RenderWindow &window)
 
 	sf::Texture screen;
 	screen.create(width, height);
-	Image im(width, height);
 	sf::Sprite sprite;
 	sprite.setTexture(screen);
 
-	Array2D<float> zbuffer(width, height);
+	Array2D<float> zbuffer(height, width);
+	Array2D<Vec> colors(height, width);
+	Image im(width, height);
 
 	int counter = 0;
 
@@ -108,6 +138,7 @@ void rotateCube(sf::RenderWindow &window)
 		{
 			int *tri = cubeTris + (3 * i);
 			Triangle t(cubeVerts[tri[0]], cubeVerts[tri[1]], cubeVerts[tri[2]]);
+			Vec triColors[] = { vertColors[tri[0]], vertColors[tri[1]], vertColors[tri[2]] };
 
 			for (auto it = t.asVecs(); it < t.asVecs() + 3; ++it)
 			{
@@ -116,8 +147,10 @@ void rotateCube(sf::RenderWindow &window)
 				*it = toScreen * (*it);
 			}
 
-			rasterize(t, zbuffer, im, faceColors[i / 2]);
+			rasterize(t, triColors, zbuffer, colors);
 		}
+
+		toImage(colors, zbuffer, im);
 
 		screen.update((sf::Uint8 const *)im.raw(), width, height, 0, 0);
 

@@ -15,35 +15,32 @@ T min(T const &a, T const &b)
 }
 
 template <typename T, typename Big>
-T clampAdd(T a, T b)
+T clamp(Big big)
 {
-	Big add = (Big)a + (Big)b;
 	T max = std::numeric_limits<T>::max();
 	T min = std::numeric_limits<T>::min();
 
-	if (add < (Big)min)
+	if (big < (Big)min)
 		return min;
 
-	if (add > (Big)max)
+	if (big > (Big)max)
 		return max;
 
-	return (T)add;
+	return (T)big;
+}
+
+template <typename T, typename Big>
+T clampAdd(T a, T b)
+{
+	Big add = (Big)a + (Big)b;
+	return clamp<T, Big>(add);
 }
 
 template <typename T, typename Big>
 T clampSubtract(T a, T b)
 {
 	Big subtract = (Big)a - (Big)b;
-	T max = std::numeric_limits<T>::max();
-	T min = std::numeric_limits<T>::min();
-
-	if (subtract < (Big)min)
-		return min;
-
-	if (subtract > (Big)max)
-		return max;
-
-	return (T)subtract;
+	return clamp<T, Big>(subtract);
 }
 
 static const double PI = 3.14159265358979323846264338327950288;

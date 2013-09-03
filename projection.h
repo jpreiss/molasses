@@ -1,7 +1,6 @@
 #pragma once
 
 #include "camera.h"
-#include "image.h"
 
 
 Mat parallelProjection(Camera const &camera)

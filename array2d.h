@@ -135,6 +135,11 @@ public:
 		return columns_;
 	}
 
+	size_t size() const
+	{
+		return rows() * columns();
+	}
+
 	size_t to1D(size_t row, size_t column) const
 	{
 		return row * columns_ + column;
