@@ -7,6 +7,7 @@
 #include "triangle.h"
 #include "rasterize.h"
 #include "image.h"
+#include <sstream>
 
 void toImage(Array2D<Vec> const &colors, Array2D<float> const &zbuffer, Image &img)
 {
@@ -109,6 +110,8 @@ void rotateCube(sf::RenderWindow &window)
 	Image im(width, height);
 
 	int counter = 0;
+	sf::Clock clock;
+	clock.restart();
 
 	while (window.isOpen())
     {
@@ -161,6 +164,16 @@ void rotateCube(sf::RenderWindow &window)
 
 		window.clear();
         window.draw(sprite);
+
+		double fps = ((double) counter) / clock.getElapsedTime().asSeconds();
+		std::stringstream fpsText;
+		fpsText << fps;
+		sf::Font font;
+		font.loadFromFile("arial.ttf");
+		sf::Text ffff(fpsText.str(), font);
+		ffff.setColor(sf::Color::White);
+		window.draw(ffff);
+
         window.display();
 
 		++counter;
