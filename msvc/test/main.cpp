@@ -184,6 +184,7 @@ void rotateCube(sf::RenderWindow &window)
                 window.close();
         }
 
+		im.fill();
 		zbuffer.fill(std::numeric_limits<float>::max());
 
 		cam.position = rot * cam.position;
