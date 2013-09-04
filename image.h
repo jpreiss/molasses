@@ -35,6 +35,17 @@ public:
 	}
 };
 
+ColorRGBA operator*(float s, ColorRGBA a)
+{
+	ColorRGBA c;
+	c.r = s * a.r;
+	c.g = s * a.g;
+	c.b = s * a.b;
+	c.a = s * a.a;
+
+	return c;
+}
+
 ColorRGBA operator+(ColorRGBA a, ColorRGBA b)
 {
 	ColorRGBA c;

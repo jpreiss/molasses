@@ -20,7 +20,7 @@ public:
 	{
 	}
 
-	Vec(float x, float y, float z, float w = 1) :
+	Vec(float x, float y, float z = 0, float w = 1) :
 		x(x), y(y), z(z), w(w)
 	{
 	}

@@ -123,6 +123,7 @@
     <ClInclude Include="..\mat2d.h" />
     <ClInclude Include="..\quat.h" />
     <ClInclude Include="..\rasterize.h" />
+    <ClInclude Include="..\texture.h" />
     <ClInclude Include="..\triangle.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
