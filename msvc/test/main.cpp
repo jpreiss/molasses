@@ -10,27 +10,6 @@
 #include "texture.h"
 #include <iostream>
 
-void toImage(Array2D<Vec> const &colors, Array2D<float> const &zbuffer, Image &img)
-{
-	for (int y = 0; y < colors.rows(); ++y)
-	{
-		for (int x = 0; x < colors.columns(); ++x)
-		{
-			if (fabs(zbuffer(y, x) - std::numeric_limits<float>::max()) < 1)
-			{
-				img(x, y) = ColorRGBA(0, 0, 0);
-			}
-			else
-			{
-				Vec col = 255 * colors(y, x);
-				img(y, x) = ColorRGBA(
-					clamp<unsigned char, float>(col.x),
-					clamp<unsigned char, float>(col.y),
-					clamp<unsigned char, float>(col.z));
-			}
-		}
-	}
-}
 
 void textureMap(Array2D<Vec> const &coords, Array2D<ColorRGBA> const &texture, Array2D<float> const &zbuffer, Image &img)
 {
@@ -193,10 +172,8 @@ void rotateCube(sf::RenderWindow &window)
 		cam.up = Vec(0, 0, 1).normalTo(cam.direction).normalized();
 
 		double fov = radians(70);
-		Mat projection = perspectiveProjection(cam, fov, 1, 100);
-		Mat toScreen = Mat::diagonal(height / 2, height / 2, 1);
-		Mat shift = Mat::translation(Vec(width / 2, height / 2, 0));
-		toScreen = shift * toScreen;
+		Mat mvp = projection(fov, 1, 100) * view(cam);
+		Mat toScreen = normalizedToScreen(width, height);
 
 		for (int i = 0; i < 12; ++i)
 		{
@@ -207,7 +184,7 @@ void rotateCube(sf::RenderWindow &window)
 				texCoords[tri[1]],
 				texCoords[tri[2]] };
 
-			t = projection * t;
+			t = mvp * t;
 
 			rasterize(t, coords, zbuffer, fragments, toScreen);
 		}
