@@ -37,9 +37,17 @@ float zinterp(Triangle const &t, Vec const &bary)
 // (not just projection space)
 
 template <typename Interpolants>
-void rasterize(Triangle const &t, Interpolants *interps, Array2D<float> &zbuf, Array2D<Interpolants> &fragments)
+void rasterize(Triangle const &t, Interpolants *interps, Array2D<float> &zbuf, Array2D<Interpolants> &fragments, Mat const &toScreen)
 {	
-	auto bbox = bounds(t.asVecs(), t.asVecs() + 3);
+	Vec ws(t.a.w, t.b.w, t.c.w);
+
+	Triangle tscreen = t;
+	tscreen.a = tscreen.a / tscreen.a.w;
+	tscreen.b = tscreen.b / tscreen.b.w;
+	tscreen.c = tscreen.c / tscreen.c.w;
+	tscreen = toScreen * tscreen;
+
+	auto bbox = bounds(tscreen.asVecs(), tscreen.asVecs() + 3);
 	Vec mins = bbox.first;
 	Vec maxes = bbox.second;
 
@@ -50,7 +58,7 @@ void rasterize(Triangle const &t, Interpolants *interps, Array2D<float> &zbuf, A
 		{
 			Vec pt(x, y, 0);
 
-			Vec bary = t.barycentricXY(pt);
+			Vec bary = tscreen.barycentricXY(pt);
 
 			if (bary.x < 0 || bary.y < 0 || bary.z < 0)
 			{
@@ -58,13 +66,12 @@ void rasterize(Triangle const &t, Interpolants *interps, Array2D<float> &zbuf, A
 				continue;
 			}
 		
-			pt.z = zinterp(t, bary);
+			pt.z = zinterp(tscreen, bary);
 
 			// z test
 			if (pt.z < zbuf(x, y))
 			{
 				zbuf(x, y) = pt.z;
-				Vec ws(t.a.w, t.b.w, t.c.w);
 				fragments(x, y) = perspectiveCorrectBaryInterp(interps[0], interps[1], interps[2], bary, ws);
 			}
 		}

@@ -2,6 +2,7 @@
 
 #include "vec.h"
 #include "mat2d.h"
+#include "mat.h"
 
 class Triangle
 {
@@ -38,3 +39,8 @@ public:
 		return baryAB;
 	}
 };
+
+Triangle operator*(Mat const &m, Triangle const &t)
+{
+	return Triangle(m * t.a, m * t.b, m * t.c);
+}

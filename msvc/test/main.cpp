@@ -209,20 +209,9 @@ void rotateCube(sf::RenderWindow &window)
 				texCoords[tri[1]],
 				texCoords[tri[2]] };
 
-			coords[0].w = t.a.w;
-			coords[1].w = t.b.w;
-			coords[2].w = t.c.w;
+			t = projection * t;
 
-			for (auto it = t.asVecs(); it < t.asVecs() + 3; ++it)
-			{
-				*it = projection * (*it);
-				float w = it->w;
-				*it = *it / w;
-				*it = toScreen * (*it);
-				it->w = w; // keep w for texture coord interpolation
-			}
-
-			rasterize(t, coords, zbuffer, fragments);
+			rasterize(t, coords, zbuffer, fragments, toScreen);
 		}
 
 		textureMap(fragments, tex, zbuffer, im);
