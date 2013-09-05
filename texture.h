@@ -25,10 +25,10 @@ T bilinear(Array2D<T> const &tex, float x, float y)
 	int y0 = y;
 	int y1 = y0 + 1;
 	
-	float left = x - x0;
-	float right = 1 - left;
-	float top = y - y0;
-	float bottom = 1 - top;
+	float right = x - x0;
+	float left = 1 - right;
+	float bottom = y - y0;
+	float top = 1 - bottom;
 
 	assert((x0 <= tex.columns()) && (y0 <= tex.rows()));
 

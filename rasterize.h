@@ -4,6 +4,23 @@
 #include "triangle.h"
 
 template <typename T>
+T perspectiveCorrectBaryInterp(T const &a, T const &b, T const &c, Vec const &bary, Vec const &ws)
+{
+	Vec invWs(1 / ws.x, 1 / ws.y, 1 / ws.z);
+
+	float invWInterp = baryInterp(invWs.x, invWs.y, invWs.z, bary);
+
+	T val = 
+		(invWs.x * bary.x * a) + 
+		(invWs.y * bary.y * b) + 
+		(invWs.z * bary.z * c);
+
+	T correct = (1.0 / invWInterp) * val;
+
+	return correct;
+}
+
+template <typename T>
 T baryInterp(T const &a, T const &b, T const &c, Vec const &bary)
 {
 	return bary.x * a + bary.y * b + bary.z * c;
@@ -47,7 +64,8 @@ void rasterize(Triangle const &t, Interpolants *interps, Array2D<float> &zbuf, A
 			if (pt.z < zbuf(x, y))
 			{
 				zbuf(x, y) = pt.z;
-				fragments(x, y) = baryInterp(interps[0], interps[1], interps[2], bary);
+				Vec ws(t.a.w, t.b.w, t.c.w);
+				fragments(x, y) = perspectiveCorrectBaryInterp(interps[0], interps[1], interps[2], bary, ws);
 			}
 		}
 	}

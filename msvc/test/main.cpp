@@ -45,6 +45,7 @@ void textureMap(Array2D<Vec> const &coords, Array2D<ColorRGBA> const &texture, A
 			else
 			{
 				Vec coord = coords(y, x);
+				//auto interp = bilinear(texture, coord[0], coord[1]);
 				auto interp = nearestNeighbor(texture, coord[0], coord[1]);
 				img(y, x) = interp;
 			}
@@ -208,11 +209,17 @@ void rotateCube(sf::RenderWindow &window)
 				texCoords[tri[1]],
 				texCoords[tri[2]] };
 
+			coords[0].w = t.a.w;
+			coords[1].w = t.b.w;
+			coords[2].w = t.c.w;
+
 			for (auto it = t.asVecs(); it < t.asVecs() + 3; ++it)
 			{
 				*it = projection * (*it);
-				*it = *it / it->w;
+				float w = it->w;
+				*it = *it / w;
 				*it = toScreen * (*it);
+				it->w = w; // keep w for texture coord interpolation
 			}
 
 			rasterize(t, coords, zbuffer, fragments);
