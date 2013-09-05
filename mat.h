@@ -108,6 +108,17 @@ public:
 		return m;
 	}
 
+	static Mat diagonal(float x, float y, float z)
+	{
+		Mat m;
+		m.arr[0][0] = x;
+		m.arr[1][1] = y;
+		m.arr[2][2] = z;
+		m.arr[3][3] = 1;
+
+		return m;
+	}
+
 	float arr[4][4];
 };
 

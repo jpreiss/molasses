@@ -194,9 +194,7 @@ void rotateCube(sf::RenderWindow &window)
 
 		double fov = radians(70);
 		Mat projection = perspectiveProjection(cam, fov, 1, 100);
-		Mat toScreen = Mat::identity();
-		toScreen(0, 0) = height / 2;
-		toScreen(1, 1) = height / 2;
+		Mat toScreen = Mat::diagonal(height / 2, height / 2, 1);
 		Mat shift = Mat::translation(Vec(width / 2, height / 2, 0));
 		toScreen = shift * toScreen;
 
