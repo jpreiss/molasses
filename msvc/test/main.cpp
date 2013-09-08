@@ -4,34 +4,11 @@
 #include "projection.h"
 #include "math.h"
 #include "quat.h"
-#include "triangle.h"
 #include "rasterize.h"
 #include "image.h"
 #include "texture.h"
 #include <iostream>
-
-
-void textureMap(Array2D<Vec> const &coords, Array2D<ColorRGBA> const &texture, Array2D<float> const &zbuffer, Image &img)
-{
-	for (int y = 0; y < coords.rows(); ++y)
-	{
-		for (int x = 0; x < coords.columns(); ++x)
-		{
-			if (zbuffer(y, x) == std::numeric_limits<float>::max())
-			{
-				img(x, y) = ColorRGBA(0, 0, 0);
-			}
-			else
-			{
-				Vec coord = coords(y, x);
-				//auto interp = bilinear(texture, coord[0], coord[1]);
-				auto interp = nearestNeighbor(texture, coord[0], coord[1]);
-				img(y, x) = interp;
-			}
-		}
-	}
-}
-
+#include <functional>
 
 void rotateCube(sf::RenderWindow &window)
 {
@@ -148,12 +125,27 @@ void rotateCube(sf::RenderWindow &window)
 	sprite.setTexture(screen);
 
 	Array2D<float> zbuffer(height, width);
-	Array2D<Vec> fragments(height, width);
-	Image im(width, height);
+	Array2D<ColorRGBA> fragments(height, width);
 
 	int counter = 0;
 	sf::Clock clock;
 	clock.restart();
+
+	auto cubeVertex = [](VertexIn const &in, VertexGlobal const &global) -> VertexIn
+	{
+		VertexIn out;
+		out.coord = in.coord;
+		out.normal = in.normal; // TODO
+		out.vertex = global.modelViewProjection * in.vertex;
+		return out;
+	};
+
+	auto cubeFragment = [&tex](VertexIn const &v) -> FragmentOut
+	{
+		FragmentOut f;
+		f.color = nearestNeighbor(tex, v.coord.x, v.coord.y);
+		return f;
+	};
 
 	while (window.isOpen())
     {
@@ -164,34 +156,38 @@ void rotateCube(sf::RenderWindow &window)
                 window.close();
         }
 
-		im.fill();
 		zbuffer.fill(std::numeric_limits<float>::max());
+		fragments.fill();
 
 		cam.position = rot * cam.position;
 		cam.direction = -cam.position.normalized();
 		cam.up = Vec(0, 0, 1).normalTo(cam.direction).normalized();
 
 		double fov = radians(70);
-		Mat mvp = projection(fov, 1, 100) * view(cam);
+
+		VertexGlobal global;
+		global.modelView = view(cam);
+		global.modelViewProjection = projection(fov, 1, 100) * view(cam);
+
 		Mat toScreen = normalizedToScreen(width, height);
 
 		for (int i = 0; i < 12; ++i)
 		{
 			int *tri = cubeTris + (3 * i);
-			Triangle t(cubeVerts[tri[0]], cubeVerts[tri[1]], cubeVerts[tri[2]]);
-			Vec coords[] = {
-				texCoords[tri[0]],
-				texCoords[tri[1]],
-				texCoords[tri[2]] };
 
-			t = mvp * t;
+			VertexIn vertices[3];
 
-			rasterize(t, coords, zbuffer, fragments, toScreen);
+			for (int i = 0; i < 3; ++i)
+			{
+				vertices[i].vertex = cubeVerts[tri[i]];
+				vertices[i].coord = texCoords[tri[i]];
+				vertices[i] = cubeVertex(vertices[i], global);
+			}
+
+			rasterize(vertices[0], vertices[1], vertices[2], cubeFragment, zbuffer, fragments, toScreen);
 		}
 
-		textureMap(fragments, tex, zbuffer, im);
-
-		screen.update((sf::Uint8 const *)im.raw(), width, height, 0, 0);
+		screen.update((sf::Uint8 const *)fragments.raw(), width, height, 0, 0);
 
 		if (counter == 100)
 		{

@@ -1,7 +1,7 @@
 #include "vec.h"
 #include "array2d.h"
 #include "util.h"
-#include "triangle.h"
+#include "shader.h"
 
 template <typename T>
 T perspectiveCorrectBaryInterp(T const &a, T const &b, T const &c, Vec const &bary, Vec const &ws)
@@ -26,28 +26,43 @@ T baryInterp(T const &a, T const &b, T const &c, Vec const &bary)
 	return bary.x * a + bary.y * b + bary.z * c;
 }
 
-float zinterp(Triangle const &t, Vec const &bary)
+Vec triNormal(Vec const &a, Vec const &b, Vec const &c)
 {
-	return baryInterp(t.a.z, t.b.z, t.c.z, bary);
+	return cross(b - a, c - a);
 }
 
 // Interpolants must define operator+ and operator*(float, Interpolants)
 // not sure how I like this but we'll see
-// vecs should already be in image space
-// (not just projection space)
+// Vecs should be in projection space
 
-template <typename Interpolants>
-void rasterize(Triangle const &t, Interpolants *interps, Array2D<float> &zbuf, Array2D<Interpolants> &fragments, Mat const &toScreen)
+template <typename VertexOut, typename FragmentOut, typename FragmentShader>
+void rasterize(
+	VertexOut const &a, VertexOut const &b, VertexOut const &c,
+	FragmentShader const &shadeFragment,
+	Array2D<float> &zbuf, Array2D<FragmentOut> &fragments, 
+	Mat const &toScreen)
 {	
-	Vec ws(t.a.w, t.b.w, t.c.w);
+	Vec ws(a.vertex.w, b.vertex.w, c.vertex.w);
 
-	Triangle tscreen = t;
-	tscreen.a = tscreen.a / tscreen.a.w;
-	tscreen.b = tscreen.b / tscreen.b.w;
-	tscreen.c = tscreen.c / tscreen.c.w;
-	tscreen = toScreen * tscreen;
+	Vec vtxScreen[] = {
+		toScreen * (a.vertex / a.vertex.w),
+		toScreen * (b.vertex / b.vertex.w),
+		toScreen * (c.vertex / c.vertex.w),
+	};
 
-	auto bbox = bounds(tscreen.asVecs(), tscreen.asVecs() + 3);
+	// backface culling. in screen space, we only need to test z
+	Vec normal = triNormal(vtxScreen[0], vtxScreen[1], vtxScreen[2]);
+	if (normal.z > 0)
+	{
+		return;
+	}
+
+	Mat2D fromBary(vtxScreen[0].x - vtxScreen[2].x, vtxScreen[1].x - vtxScreen[2].x,
+	               vtxScreen[0].y - vtxScreen[2].y, vtxScreen[1].y - vtxScreen[2].y);
+
+	Mat2D toBary = fromBary.inverted();
+
+	auto bbox = bounds(vtxScreen, vtxScreen + 3);
 	Vec mins = bbox.first;
 	Vec maxes = bbox.second;
 
@@ -57,8 +72,8 @@ void rasterize(Triangle const &t, Interpolants *interps, Array2D<float> &zbuf, A
 		for (int y = ceil(mins.y); y <= floor(maxes.y); ++y)
 		{
 			Vec pt(x, y, 0);
-
-			Vec bary = tscreen.barycentricXY(pt);
+			Vec bary = toBary * (pt - vtxScreen[2]);
+			bary.z = 1 - (bary.x + bary.y);
 
 			if (bary.x < 0 || bary.y < 0 || bary.z < 0)
 			{
@@ -66,13 +81,15 @@ void rasterize(Triangle const &t, Interpolants *interps, Array2D<float> &zbuf, A
 				continue;
 			}
 		
-			pt.z = zinterp(tscreen, bary);
-
-			// z test
-			if (pt.z < zbuf(x, y))
+			// early z test
+			double zinterp = baryInterp(
+				vtxScreen[0].z, vtxScreen[1].z, vtxScreen[2].z, bary);
+			
+			if (zinterp < zbuf(x, y))
 			{
-				zbuf(x, y) = pt.z;
-				fragments(x, y) = perspectiveCorrectBaryInterp(interps[0], interps[1], interps[2], bary, ws);
+				zbuf(x, y) = zinterp;
+				VertexOut interpolant = perspectiveCorrectBaryInterp(a, b, c, bary, ws);			
+				fragments(y, x) = shadeFragment(interpolant).color;
 			}
 		}
 	}

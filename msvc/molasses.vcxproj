@@ -119,12 +119,11 @@
     <ClInclude Include="../projection.h" />
     <ClInclude Include="../util.h" />
     <ClInclude Include="../vec.h" />
-    <ClInclude Include="..\image.h" />
     <ClInclude Include="..\mat2d.h" />
     <ClInclude Include="..\quat.h" />
     <ClInclude Include="..\rasterize.h" />
+    <ClInclude Include="..\shader.h" />
     <ClInclude Include="..\texture.h" />
-    <ClInclude Include="..\triangle.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
