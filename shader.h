@@ -9,6 +9,7 @@
 class VertexGlobal
 {
 public:
+	Mat view;
 	Mat modelView;
 	Mat modelViewProjection;
 	Mat normal;
@@ -51,12 +52,14 @@ VertexOutCore operator+(VertexOutCore const &a, VertexOutCore const &b)
 {
 	VertexOutCore out;
 	out.vertex = a.vertex + b.vertex;
+	return out;
 }
 
 VertexOutCore operator*(float s, VertexOutCore const &a)
 {
 	VertexOutCore out;
 	out.vertex = s * a.vertex;
+	return out;
 }
 
 class FragmentOut
@@ -72,6 +75,6 @@ class VertexShader : std::function<VertexOut(VertexIn const &, VertexGlobal cons
 };
 
 template <typename VertexOut>
-class FragmentShader : std::function<FragmentOut(VertexIn const &vertex)>
+class FragmentShader : std::function<FragmentOut(VertexIn const &, VertexGlobal const &)>
 {
 };

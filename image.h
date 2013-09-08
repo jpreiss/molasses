@@ -41,7 +41,7 @@ ColorRGBA operator*(float s, ColorRGBA a)
 	c.r = s * a.r;
 	c.g = s * a.g;
 	c.b = s * a.b;
-	c.a = s * a.a;
+	c.a = a.a;
 
 	return c;
 }

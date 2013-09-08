@@ -7,6 +7,8 @@
 class Mat
 {
 public:
+	float arr[4][4];
+
 	Mat()
 	{
 		for (int row = 0; row < 4; ++row)
@@ -61,6 +63,21 @@ public:
 		{
 			arr[row][col] = v[col];
 		}
+	}
+
+	Mat withoutTranslation() const
+	{
+		Mat m;
+
+		for (int row = 0; row < 3; ++row)
+		for (int col = 0; col < 3; ++col)
+		{
+			m(row, col) = arr[row][col];
+		}
+
+		m(3, 3) = 1.0;
+
+		return m;
 	}
 
 	static Mat identity()
@@ -119,7 +136,65 @@ public:
 		return m;
 	}
 
-	float arr[4][4];
+	static Mat transpose(Mat const &m)
+	{
+		Mat t;
+
+		for (int row = 0; row < 4; ++row)
+		for (int col = 0; col < 4; ++col)
+		{
+			t(row, col) = m(col, row);
+		}
+
+		return m;
+	}
+
+	static Mat invert(Mat const &m)
+	{
+		Mat mm(m);
+		Mat inverse = Mat::identity();
+
+		// rref
+		for (int r1 = 0; r1 < 4; ++r1)
+		{
+			for (int r2 = r1 + 1; r2 < 4; ++r2)
+			{
+				float scale = mm(r2, r1) / mm(r1, r1);
+				for (int i = 0; i < 4; ++i)
+				{
+					mm(r2, i) -= scale * mm(r1, i);
+					inverse(r2, i) -= scale * inverse(r1, i);
+				}
+			}
+		}
+
+		// full
+		for (int r1 = 3; r1 >= 0; --r1)
+		{
+			for (int r2 = r1 - 1; r2 >= 0; --r2)
+			{
+				float scale = mm(r2, r1) / mm(r1, r1);
+				for (int i = 0; i < 4; ++i)
+				{
+					mm(r2, i) -= scale * mm(r1, i);
+					inverse(r2, i) -= scale * inverse(r1, i);
+				}
+			}
+		}
+
+		// and...
+		for (int r = 0; r < 4; ++r)
+		{
+			float scale = 1.0 / mm(r, r);
+			for (int i = 0; i < 4; ++i)
+			{
+				inverse(r, i) *= scale;
+			}
+		}
+
+		return inverse;
+	}
+
 };
 
 Mat operator *(float s, Mat const &b)

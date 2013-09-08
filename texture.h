@@ -20,6 +20,9 @@ T nearestNeighbor(Array2D<T> const &tex, float x, float y)
 template <typename T>
 T bilinear(Array2D<T> const &tex, float x, float y)
 {
+	x = x - 0.5;
+	y = y - 0.5;
+
 	int x0 = x;
 	int x1 = x0 + 1;
 	int y0 = y;
@@ -37,10 +40,10 @@ T bilinear(Array2D<T> const &tex, float x, float y)
 		// coord is on right hand side of texture
 		if (y0 == tex.rows())
 		{
-			// coord is on bottom too!
+			// coord is on bottom too
 			return tex(x0 - 1, y0 - 1);
 		}
-		
+	
 		// otherwise, on right but not bottom
 		T v00 = tex(y0, x0 - 1);
 		T v01 = tex(y1, x0 - 1);

@@ -40,7 +40,8 @@ void rasterize(
 	VertexOut const &a, VertexOut const &b, VertexOut const &c,
 	FragmentShader const &shadeFragment,
 	Array2D<float> &zbuf, Array2D<FragmentOut> &fragments, 
-	Mat const &toScreen)
+	Mat const &toScreen,
+	VertexGlobal const &global)
 {	
 	Vec ws(a.vertex.w, b.vertex.w, c.vertex.w);
 
@@ -52,7 +53,7 @@ void rasterize(
 
 	// backface culling. in screen space, we only need to test z
 	Vec normal = triNormal(vtxScreen[0], vtxScreen[1], vtxScreen[2]);
-	if (normal.z > 0)
+	if (normal.z < 0)
 	{
 		return;
 	}
@@ -85,11 +86,11 @@ void rasterize(
 			double zinterp = baryInterp(
 				vtxScreen[0].z, vtxScreen[1].z, vtxScreen[2].z, bary);
 			
-			if (zinterp < zbuf(x, y))
+			if (x < zbuf.columns() && y < zbuf.rows() && zinterp < zbuf(y, x))
 			{
-				zbuf(x, y) = zinterp;
+				zbuf(y, x) = zinterp;
 				VertexOut interpolant = perspectiveCorrectBaryInterp(a, b, c, bary, ws);			
-				fragments(y, x) = shadeFragment(interpolant).color;
+				fragments(y, x) = shadeFragment(interpolant, global).color;
 			}
 		}
 	}

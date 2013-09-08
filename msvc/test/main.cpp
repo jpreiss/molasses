@@ -7,8 +7,32 @@
 #include "rasterize.h"
 #include "image.h"
 #include "texture.h"
+#include "objfile.h"
 #include <iostream>
+#include <fstream>
 #include <functional>
+
+class VertexWithUnprojected : public VertexIn
+{
+public:
+	Vec vertexUnprojected;
+};
+
+VertexWithUnprojected operator+(VertexWithUnprojected const &a, VertexWithUnprojected const &b)
+{
+	VertexWithUnprojected out;
+	(VertexIn &)out = (VertexIn &)a + (VertexIn &)b;
+	out.vertexUnprojected = a.vertexUnprojected + b.vertexUnprojected;
+	return out;
+}
+
+VertexWithUnprojected operator*(float s, VertexWithUnprojected const &a)
+{
+	VertexWithUnprojected out;
+	(VertexIn &)out = s * (VertexIn &)a;
+	out.vertexUnprojected = s * a.vertexUnprojected;
+	return out;
+}
 
 void rotateCube(sf::RenderWindow &window)
 {
@@ -16,108 +40,26 @@ void rotateCube(sf::RenderWindow &window)
 	int width = size.x;
 	int height = size.y;
 
-	// discontinuous faces
-	Vec cubeVerts[] = {
-		// 1 
-		Vec(-1, -1, -1),
-		Vec( 1, -1, -1),
-		Vec( 1,  1, -1),
-		Vec(-1,  1, -1),
-
-		// 2
-		Vec(1, -1, -1),
-		Vec(1, -1, 1),
-		Vec(1, 1, 1),
-		Vec(1, 1, -1),
-
-		// 3
-		Vec(1, -1, 1),
-		Vec(-1, -1, 1),
-		Vec(-1, 1, 1),
-		Vec(1, 1, 1),
-
-		// 4
-		Vec(-1, -1, 1),
-		Vec(-1, -1, -1),
-		Vec(-1, 1, -1),
-		Vec(-1, 1, 1),
-
-		// 5
-		Vec(-1, 1, -1),
-		Vec(1, 1, -1),
-		Vec(1, 1, 1),
-		Vec(-1, 1, 1),
-
-		// 6
-		Vec(1, -1, -1),
-		Vec(-1, -1, -1),
-		Vec(-1, -1, 1),
-		Vec(1, -1, 1)
-	};
-
-	int cubeTris[] = {
-		0, 1, 2,
-		0, 2, 3,
-		4, 5, 6,
-		4, 6, 7,
-		8, 9, 10,
-		8, 10, 11,
-		12, 13, 14,
-		12, 14, 15,
-		16, 17, 18,
-		16, 18, 19,
-		20, 21, 22,
-		20, 22, 23
-	};
-
-	Vec texCoords[] = {	
-		// 1
-		Vec(0, 16),
-		Vec(8, 16),
-		Vec(8, 8),
-		Vec(0, 8),
-
-		// 2
-		Vec(8, 16),
-		Vec(16, 16),
-		Vec(16, 8),
-		Vec(8, 8),
-		
-		// 3
-		Vec(16, 16),
-		Vec(24, 16),
-		Vec(24, 8),
-		Vec(16, 8),
-				
-		// 4
-		Vec(24, 16),
-		Vec(32, 16),
-		Vec(32, 8),
-		Vec(24, 8),
-
-		// 5
-		Vec(16, 8),
-		Vec(24, 8),
-		Vec(24, 0),
-		Vec(16, 0),
-
-		// 6
-		Vec(16, 24),
-		Vec(24, 24),
-		Vec(24, 16),
-		Vec(16, 16)
-	};
-
 	sf::Image texture;
 	texture.loadFromFile("../../cube.png");
 	auto raw = texture.getPixelsPtr();
 	Array2D<ColorRGBA> tex(24, 32);
 	std::copy(raw, raw + (4 * 32 * 24), (unsigned char *)tex.raw());
 
+	std::vector<Vec> verts;
+	std::vector<int> tris;
+	std::vector<Vec> normals;
+	std::vector<int> triNormals;
+	std::ifstream teapot("../../teapot.obj");
+	readObj(teapot, verts, &normals, nullptr, tris, &triNormals, nullptr);
+
+	// rectify teapot model
+	Mat flip = Mat::fromRows33(Vec(1, 0, 0), Vec(0, 0, -1), Vec(0, 1, 0));
+
 	Quat rot = Quat::from_axis_angle(Vec(0, 0, 1), 0.005);
 
 	Camera cam;
-	cam.position = Vec(4, 0, 1.5);
+	cam.position = Vec(30, 0, 10);
 
 	sf::Texture screen;
 	screen.create(width, height);
@@ -131,19 +73,27 @@ void rotateCube(sf::RenderWindow &window)
 	sf::Clock clock;
 	clock.restart();
 
-	auto cubeVertex = [](VertexIn const &in, VertexGlobal const &global) -> VertexIn
+	Vec light = Vec(0, 30, 100);
+
+	auto vertShade = [](VertexIn const &in, VertexGlobal const &global) -> VertexWithUnprojected
 	{
-		VertexIn out;
-		out.coord = in.coord;
-		out.normal = in.normal; // TODO
+		VertexWithUnprojected out;
+		//out.coord = in.coord;
+		out.normal = global.modelView.withoutTranslation() * in.normal;
 		out.vertex = global.modelViewProjection * in.vertex;
+		out.vertexUnprojected = global.modelView * in.vertex;
 		return out;
 	};
 
-	auto cubeFragment = [&tex](VertexIn const &v) -> FragmentOut
+	auto fragShade = [&](VertexWithUnprojected const &v, VertexGlobal const &global) -> FragmentOut
 	{
 		FragmentOut f;
-		f.color = nearestNeighbor(tex, v.coord.x, v.coord.y);
+		Vec eyeLight = global.view * light;
+		Vec toLight = (eyeLight - v.vertexUnprojected).normalized();
+		float dp = dot(v.normal.normalized(), toLight);
+		//f.color = nearestNeighbor(tex, v.coord.x, v.coord.y);
+		f.color = (clamp(dp / 2, 0.0f, 1.0f) * ColorRGBA(255, 255, 0));
+		f.color = f.color + 0.4 * ColorRGBA(200, 150, 50);
 		return f;
 	};
 
@@ -163,33 +113,39 @@ void rotateCube(sf::RenderWindow &window)
 		cam.direction = -cam.position.normalized();
 		cam.up = Vec(0, 0, 1).normalTo(cam.direction).normalized();
 
-		double fov = radians(70);
+		double fov = radians(60);
 
 		VertexGlobal global;
-		global.modelView = view(cam);
-		global.modelViewProjection = projection(fov, 1, 100) * view(cam);
+		global.view = view(cam);
+		global.modelView = view(cam) * flip;
+		global.modelViewProjection = projection(fov, 1, 100) * view(cam) * flip;
+		global.normal = Mat::transpose(Mat::invert(global.modelView));
 
 		Mat toScreen = normalizedToScreen(width, height);
 
-		for (int i = 0; i < 12; ++i)
+		for (int i = 0; i < tris.size() / 3; ++i)
 		{
-			int *tri = cubeTris + (3 * i);
+			int *tri = tris.data() + (3 * i);
+			int *triNorm = triNormals.data() + (3 * i);
 
 			VertexIn vertices[3];
 
+			VertexWithUnprojected shaded[3];
+
 			for (int i = 0; i < 3; ++i)
 			{
-				vertices[i].vertex = cubeVerts[tri[i]];
-				vertices[i].coord = texCoords[tri[i]];
-				vertices[i] = cubeVertex(vertices[i], global);
+				vertices[i].vertex = verts[tri[i]];
+				vertices[i].normal = normals[triNorm[i]];
+				//vertices[i].coord = texCoords[tri[i]];
+				shaded[i] = vertShade(vertices[i], global);
 			}
 
-			rasterize(vertices[0], vertices[1], vertices[2], cubeFragment, zbuffer, fragments, toScreen);
+			rasterize(shaded[0], shaded[1], shaded[2], fragShade, zbuffer, fragments, toScreen, global);
 		}
 
 		screen.update((sf::Uint8 const *)fragments.raw(), width, height, 0, 0);
 
-		if (counter == 100)
+		if (counter == 230)
 		{
 			screen.copyToImage().saveToFile("../../molasses.png");
 		}

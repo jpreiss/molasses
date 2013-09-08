@@ -120,6 +120,7 @@
     <ClInclude Include="../util.h" />
     <ClInclude Include="../vec.h" />
     <ClInclude Include="..\mat2d.h" />
+    <ClInclude Include="..\objfile.h" />
     <ClInclude Include="..\quat.h" />
     <ClInclude Include="..\rasterize.h" />
     <ClInclude Include="..\shader.h" />
