@@ -45,11 +45,28 @@ void rasterize(
 {	
 	Vec ws(a.vertex.w, b.vertex.w, c.vertex.w);
 
+	Vec vtxProj[] = {
+		a.vertex / a.vertex.w,
+		b.vertex / b.vertex.w,
+		c.vertex / c.vertex.w,
+	};
+	
 	Vec vtxScreen[] = {
 		toScreen * (a.vertex / a.vertex.w),
 		toScreen * (b.vertex / b.vertex.w),
 		toScreen * (c.vertex / c.vertex.w),
 	};
+	
+	// bounding box clipping
+	Bounds triBounds = Bounds::fromIterators(vtxProj, vtxProj + 3);
+	Bounds viewCube;
+	viewCube.merge(Vec(-1, -1, 0));
+	viewCube.merge(Vec(1, 1, 1));
+
+	if (!viewCube.intersects(triBounds))
+	{
+		return;
+	}
 
 	// backface culling. in screen space, we only need to test z
 	Vec normal = triNormal(vtxScreen[0], vtxScreen[1], vtxScreen[2]);
@@ -63,14 +80,12 @@ void rasterize(
 
 	Mat2D toBary = fromBary.inverted();
 
-	auto bbox = bounds(vtxScreen, vtxScreen + 3);
-	Vec mins = bbox.first;
-	Vec maxes = bbox.second;
+	Bounds bbox = Bounds::fromIterators(vtxScreen, vtxScreen + 3);
 
 	// need shadow rules for perfect int coords
-	for (int x = ceil(mins.x); x <= floor(maxes.x); ++x)
+	for (int x = ceil(bbox.mins.x); x <= floor(bbox.maxes.x); ++x)
 	{
-		for (int y = ceil(mins.y); y <= floor(maxes.y); ++y)
+		for (int y = ceil(bbox.mins.y); y <= floor(bbox.maxes.y); ++y)
 		{
 			Vec pt(x, y, 0);
 			Vec bary = toBary * (pt - vtxScreen[2]);

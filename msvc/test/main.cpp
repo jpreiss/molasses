@@ -8,6 +8,7 @@
 #include "image.h"
 #include "texture.h"
 #include "objfile.h"
+#include "bounds.h"
 #include <iostream>
 #include <fstream>
 #include <functional>
@@ -32,6 +33,27 @@ VertexWithUnprojected operator*(float s, VertexWithUnprojected const &a)
 	(VertexIn &)out = s * (VertexIn &)a;
 	out.vertexUnprojected = s * a.vertexUnprojected;
 	return out;
+}
+
+Vec keyVelocity()
+{
+	Vec velocity;
+
+	sf::Keyboard::Key keys[] = 
+		{ sf::Keyboard::W, sf::Keyboard::A, sf::Keyboard::S, sf::Keyboard::D };
+
+	Vec directions[] =
+		{ Vec(0, 0, 1), Vec(-1, 0, 0), Vec(0, 0, -1), Vec(1, 0, 0) };
+
+	for (int i = 0; i < 4; ++i)
+	{
+		if (sf::Keyboard::isKeyPressed(keys[i]))
+		{
+			velocity = velocity + directions[i];
+		}
+	}
+
+	return velocity.normalized();
 }
 
 void rotateCube(sf::RenderWindow &window)
@@ -59,7 +81,9 @@ void rotateCube(sf::RenderWindow &window)
 	Quat rot = Quat::from_axis_angle(Vec(0, 0, 1), 0.005);
 
 	Camera cam;
-	cam.position = Vec(30, 0, 10);
+	cam.position = Vec(30, 0, 0);
+	cam.direction = Vec(-1, 0, 0);
+	cam.up = Vec(0, 0, 1);
 
 	sf::Texture screen;
 	screen.create(width, height);
@@ -97,6 +121,8 @@ void rotateCube(sf::RenderWindow &window)
 		return f;
 	};
 
+	auto prevMouse = sf::Mouse::getPosition(window);
+
 	while (window.isOpen())
     {
         sf::Event event;
@@ -109,9 +135,16 @@ void rotateCube(sf::RenderWindow &window)
 		zbuffer.fill(std::numeric_limits<float>::max());
 		fragments.fill();
 
-		cam.position = rot * cam.position;
-		cam.direction = -cam.position.normalized();
-		cam.up = Vec(0, 0, 1).normalTo(cam.direction).normalized();
+		Vec v = Mat::transpose(view(cam).withoutTranslation()) * keyVelocity();
+		cam.position = cam.position + 0.3 * v;
+
+		auto mouse = sf::Mouse::getPosition(window);
+		auto mouseDelta = mouse - prevMouse;
+
+
+		//cam.position = rot * cam.position;
+		//cam.direction = -cam.position.normalized();
+		//cam.up = Vec(0, 0, 1).normalTo(cam.direction).normalized();
 
 		double fov = radians(60);
 

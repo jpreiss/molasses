@@ -42,7 +42,12 @@ public:
 
 	Vec normalized() const
 	{
-		return *this / length();
+		float len2 = length2();
+		if (len2 == 0)
+		{
+			return *this;
+		}
+		return *this / sqrt(len2);
 	}
 
 	Vec projectedTo(Vec const &other) const
@@ -121,20 +126,22 @@ Vec vmin(Vec const &a, Vec const &b)
 	return Vec(min(a.x, b.x), min(a.y, b.y), min(a.z, b.z));
 }
 
-template <typename Iter>
-std::pair<Vec, Vec> bounds(Iter begin, Iter end)
+bool operator<(Vec const &a, Vec const &b)
 {
-	const float fmax = std::numeric_limits<float>::max();
-	const float fmin = std::numeric_limits<float>::min();
+	return a.x < b.x && a.y < b.y && a.z < b.z;
+}
 
-	Vec mins(fmax, fmax, fmax);
-	Vec maxes(fmin, fmin, fmin);
+bool operator>(Vec const &a, Vec const &b)
+{
+	return b < a;
+}
 
-	for (Iter it = begin; it != end; ++it)
-	{
-		mins = vmin(mins, *it);
-		maxes = vmax(maxes, *it);
-	}
+bool operator<=(Vec const &a, Vec const &b)
+{
+	return a.x <= b.x && a.y <= b.y && a.z <= b.z;
+}
 
-	return std::make_pair(mins, maxes);
+bool operator>=(Vec const &a, Vec const &b)
+{
+	return b <= a;
 }

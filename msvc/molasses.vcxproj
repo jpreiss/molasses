@@ -119,6 +119,7 @@
     <ClInclude Include="../projection.h" />
     <ClInclude Include="../util.h" />
     <ClInclude Include="../vec.h" />
+    <ClInclude Include="..\bounds.h" />
     <ClInclude Include="..\mat2d.h" />
     <ClInclude Include="..\objfile.h" />
     <ClInclude Include="..\quat.h" />

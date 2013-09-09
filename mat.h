@@ -146,7 +146,7 @@ public:
 			t(row, col) = m(col, row);
 		}
 
-		return m;
+		return t;
 	}
 
 	static Mat invert(Mat const &m)

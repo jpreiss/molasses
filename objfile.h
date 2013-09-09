@@ -1,7 +1,5 @@
 #pragma once
 
-#include "model.h"
-
 #include <vector>
 #include <string>
 #include <iosfwd>
