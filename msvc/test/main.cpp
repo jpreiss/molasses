@@ -81,7 +81,7 @@ void rotateCube(sf::RenderWindow &window)
 	Quat rot = Quat::from_axis_angle(Vec(0, 0, 1), 0.005);
 
 	Camera cam;
-	cam.position = Vec(30, 0, 0);
+	cam.position = Vec(30, 0, 5);
 	cam.direction = Vec(-1, 0, 0);
 	cam.up = Vec(0, 0, 1);
 
@@ -130,6 +130,14 @@ void rotateCube(sf::RenderWindow &window)
         {
             if (event.type == sf::Event::Closed)
                 window.close();
+
+			if (event.type == sf::Event::KeyPressed)
+			{
+				if (event.key.code == sf::Keyboard::P)
+				{
+					screen.copyToImage().saveToFile("../../molasses.png");
+				}
+			}
         }
 
 		zbuffer.fill(std::numeric_limits<float>::max());
@@ -178,19 +186,12 @@ void rotateCube(sf::RenderWindow &window)
 
 		screen.update((sf::Uint8 const *)fragments.raw(), width, height, 0, 0);
 
-		if (counter == 230)
-		{
-			screen.copyToImage().saveToFile("../../molasses.png");
-		}
-
 		window.clear();
         window.draw(sprite);
+        window.display();
 
 		double fps = ((double) counter) / clock.getElapsedTime().asSeconds();
 		std::cout << fps << " FPS" << std::endl;
-
-        window.display();
-
 		++counter;
 	}
 }

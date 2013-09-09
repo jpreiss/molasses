@@ -57,13 +57,15 @@ void rasterize(
 		toScreen * (c.vertex / c.vertex.w),
 	};
 	
-	// bounding box clipping
-	Bounds triBounds = Bounds::fromIterators(vtxProj, vtxProj + 3);
+	// incorrecat, overly agressive bounding box culling
+	// until i get real clipping
 	Bounds viewCube;
-	viewCube.merge(Vec(-1, -1, 0));
+	viewCube.merge(Vec(-1, -1, -1));
 	viewCube.merge(Vec(1, 1, 1));
 
-	if (!viewCube.intersects(triBounds))
+	if (!viewCube.contains(vtxProj[0]) ||
+	    !viewCube.contains(vtxProj[1]) ||
+		!viewCube.contains(vtxProj[2]))
 	{
 		return;
 	}
