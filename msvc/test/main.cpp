@@ -63,6 +63,8 @@ Vec keyVelocity()
 
 void rotateCube(sf::RenderWindow &window)
 {
+	bool mouse = true;
+
 	auto size = window.getSize();
 	int width = size.x;
 	int height = size.y;
@@ -104,7 +106,7 @@ void rotateCube(sf::RenderWindow &window)
 	sf::Clock clock;
 	clock.restart();
 
-	Vec light = Vec(0, 30, 100);
+	Vec light = Vec(0, 30, 50);
 
 	auto vertShade = [](VertexIn const &in, VertexGlobal const &global) -> VertexWithUnprojected
 	{
@@ -121,10 +123,19 @@ void rotateCube(sf::RenderWindow &window)
 		FragmentOut f;
 		Vec eyeLight = global.view * light;
 		Vec toLight = (eyeLight - v.vertexUnprojected).normalized();
-		float dp = dot(v.normal.normalized(), toLight);
-		//f.color = nearestNeighbor(tex, v.coord.x, v.coord.y);
-		f.color = (clamp(dp / 2, 0.0f, 1.0f) * ColorRGBA(255, 255, 0));
-		f.color = f.color + 0.4 * ColorRGBA(200, 150, 50);
+		Vec normal = v.normal.normalized();
+		float diffuse = clamp(dot(normal, toLight), 0.0f, 1.0f);
+
+		Vec reflection = toLight.projectedTo(normal) - toLight.normalTo(normal);
+		float specular = pow(clamp(-reflection.z, 0.0f, 1.0f), 8);
+
+		float ambient = 0.1;
+
+		f.color = 
+			diffuse * ColorRGBA(20, 70, 150) +
+			specular * ColorRGBA(100, 200, 255) +
+			ambient * ColorRGBA(100, 150, 200);
+
 		return f;
 	};
 
@@ -146,6 +157,10 @@ void rotateCube(sf::RenderWindow &window)
 				{
 					window.close();
 				}
+				if (event.key.code == sf::Keyboard::M)
+				{
+					mouse = !mouse;
+				}
 			}
         }
 
@@ -162,19 +177,20 @@ void rotateCube(sf::RenderWindow &window)
 		Vec v = camCsys * keyVelocity();
 		cam.position = cam.position + speed * v;
 
-		///*
-		auto mouse = sf::Mouse::getPosition(window);
-		auto size = window.getSize();
-		auto middle = sf::Vector2i(size.x / 2, size.y / 2);
-		auto dmouse = sf::Vector2i(mouse.x - middle.x, mouse.y - middle.y);
-		dmouse.y *= -1;
-		sf::Mouse::setPosition(middle, window);
+		if (mouse)
+		{
+			auto mouse = sf::Mouse::getPosition(window);
+			auto size = window.getSize();
+			auto middle = sf::Vector2i(size.x / 2, size.y / 2);
+			auto dmouse = sf::Vector2i(mouse.x - middle.x, mouse.y - middle.y);
+			dmouse.y *= -1;
+			sf::Mouse::setPosition(middle, window);
 
-		Vec mouseVelocity = Vec(dmouse.x, dmouse.y, 0) / 300.0;
-		Vec worldTurn = camCsys * mouseVelocity;
-		cam.direction = (cam.direction + worldTurn).normalized();
-		cam.up = Vec(0, 0, 1).normalTo(cam.direction).normalized(); // not most efficient
-		//*/
+			Vec mouseVelocity = Vec(dmouse.x, dmouse.y, 0) / 300.0;
+			Vec worldTurn = camCsys * mouseVelocity;
+			cam.direction = (cam.direction + worldTurn).normalized();
+			cam.up = Vec(0, 0, 1).normalTo(cam.direction).normalized(); // not most efficient
+		}
 
 		//cam.position = rot * cam.position;
 		//cam.direction = -cam.position.normalized();
