@@ -17,10 +17,10 @@ Mat projection(double fov, double near, double far)
 {
 	float xy = 1 / tan(fov / 2);
 
-	Mat projection = Mat(xy, 0,  0,                0,
-		                 0,  xy, 0,                0,
-						 0,  0,  1 / (far - near), near / (far - near),
-						 0,  0,  -1,                0);
+	Mat projection = Mat(xy, 0,   0,                  0,
+		                 0,  xy,  0,                  0,
+						 0,  0,   far / (far - near), - far * near / (far - near),
+						 0,  0,   1,                  0);
 
 	return projection;
 }

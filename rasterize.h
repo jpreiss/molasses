@@ -43,29 +43,41 @@ void rasterize(
 	Mat const &toScreen,
 	VertexGlobal const &global)
 {	
+	int const width = zbuf.columns();
+	int const height = zbuf.rows();
+
 	Vec ws(a.vertex.w, b.vertex.w, c.vertex.w);
 
 	Vec vtxProj[] = {
-		a.vertex / a.vertex.w,
-		b.vertex / b.vertex.w,
-		c.vertex / c.vertex.w,
+		a.vertex / abs(a.vertex.w),
+		b.vertex / abs(b.vertex.w),
+		c.vertex / abs(c.vertex.w),
 	};
 	
 	Vec vtxScreen[] = {
-		toScreen * (a.vertex / a.vertex.w),
-		toScreen * (b.vertex / b.vertex.w),
-		toScreen * (c.vertex / c.vertex.w),
+		toScreen * vtxProj[0],
+		toScreen * vtxProj[1],
+		toScreen * vtxProj[2],
 	};
 	
 	// incorrecat, overly agressive bounding box culling
 	// until i get real clipping
 	Bounds viewCube;
-	viewCube.merge(Vec(-1, -1, -1));
+	viewCube.merge(Vec(-1, -1, 0));
 	viewCube.merge(Vec(1, 1, 1));
 
+	Bounds object = Bounds::fromIterators(vtxProj, vtxProj + 3);
+
+	// partially outside
 	if (!viewCube.contains(vtxProj[0]) ||
 	    !viewCube.contains(vtxProj[1]) ||
 		!viewCube.contains(vtxProj[2]))
+	{
+		//return;
+	}
+
+	// completely outside
+	if (!viewCube.intersects(object))
 	{
 		return;
 	}
@@ -84,10 +96,15 @@ void rasterize(
 
 	Bounds bbox = Bounds::fromIterators(vtxScreen, vtxScreen + 3);
 
+	int xmin = max(0, (int)ceil(bbox.mins.x));
+	int xmax = min(width, (int)ceil(bbox.maxes.x));
+	int ymin = max(0, (int)ceil(bbox.mins.y));
+	int ymax = min(height, (int)ceil(bbox.maxes.y));
+
 	// need shadow rules for perfect int coords
-	for (int x = ceil(bbox.mins.x); x <= floor(bbox.maxes.x); ++x)
+	for (int x = xmin; x < xmax; ++x)
 	{
-		for (int y = ceil(bbox.mins.y); y <= floor(bbox.maxes.y); ++y)
+		for (int y = ymin; y < ymax; ++y)
 		{
 			Vec pt(x, y, 0);
 			Vec bary = toBary * (pt - vtxScreen[2]);
@@ -102,12 +119,17 @@ void rasterize(
 			// early z test
 			double zinterp = baryInterp(
 				vtxScreen[0].z, vtxScreen[1].z, vtxScreen[2].z, bary);
-			
-			if (x < zbuf.columns() && y < zbuf.rows() && zinterp < zbuf(y, x))
+
+			if (zinterp < 0)
 			{
-				zbuf(y, x) = zinterp;
+				continue;
+			}
+			
+			if (x < zbuf.columns() && y < zbuf.rows() && zinterp < zbuf(height - y, x))
+			{
+				zbuf(height - y, x) = zinterp;
 				VertexOut interpolant = perspectiveCorrectBaryInterp(a, b, c, bary, ws);			
-				fragments(y, x) = shadeFragment(interpolant, global).color;
+				fragments(height - y, x) = shadeFragment(interpolant, global).color;
 			}
 		}
 	}

@@ -37,19 +37,24 @@ VertexWithUnprojected operator*(float s, VertexWithUnprojected const &a)
 
 Vec keyVelocity()
 {
+	using std::make_pair;
+
+	std::pair<sf::Keyboard::Key, Vec> keyDirs[] = {
+		make_pair(sf::Keyboard::W, Vec(0, 0, 1)),
+		make_pair(sf::Keyboard::A, Vec(-1, 0, 0)),
+		make_pair(sf::Keyboard::S, Vec(0, 0, -1)),
+		make_pair(sf::Keyboard::D, Vec(1, 0, 0)),
+		make_pair(sf::Keyboard::Space, Vec(0, 1, 0)),
+		make_pair(sf::Keyboard::LControl, Vec(0, -1, 0)),
+	};
+
 	Vec velocity;
 
-	sf::Keyboard::Key keys[] = 
-		{ sf::Keyboard::W, sf::Keyboard::A, sf::Keyboard::S, sf::Keyboard::D };
-
-	Vec directions[] =
-		{ Vec(0, 0, 1), Vec(-1, 0, 0), Vec(0, 0, -1), Vec(1, 0, 0) };
-
-	for (int i = 0; i < 4; ++i)
+	for (int i = 0; i < sizeof(keyDirs) / sizeof(keyDirs[0]); ++i)
 	{
-		if (sf::Keyboard::isKeyPressed(keys[i]))
+		if (sf::Keyboard::isKeyPressed(keyDirs[i].first))
 		{
-			velocity = velocity + directions[i];
+			velocity = velocity + keyDirs[i].second;
 		}
 	}
 
@@ -82,8 +87,10 @@ void rotateCube(sf::RenderWindow &window)
 
 	Camera cam;
 	cam.position = Vec(30, 0, 5);
-	cam.direction = Vec(-1, 0, 0);
-	cam.up = Vec(0, 0, 1);
+
+	// replace angle calc with mouse once it's ready
+	cam.direction = -cam.position.normalized();
+	cam.up = Vec(0, 0, 1).normalTo(cam.direction).normalized();
 
 	sf::Texture screen;
 	screen.create(width, height);
@@ -121,8 +128,6 @@ void rotateCube(sf::RenderWindow &window)
 		return f;
 	};
 
-	auto prevMouse = sf::Mouse::getPosition(window);
-
 	while (window.isOpen())
     {
         sf::Event event;
@@ -137,18 +142,39 @@ void rotateCube(sf::RenderWindow &window)
 				{
 					screen.copyToImage().saveToFile("../../molasses.png");
 				}
+				if (event.key.code == sf::Keyboard::Q)
+				{
+					window.close();
+				}
 			}
         }
 
 		zbuffer.fill(std::numeric_limits<float>::max());
 		fragments.fill();
 
-		Vec v = Mat::transpose(view(cam).withoutTranslation()) * keyVelocity();
-		cam.position = cam.position + 0.3 * v;
+		Mat camCsys = Mat::transpose(view(cam).withoutTranslation());
 
+#ifdef _DEBUG
+		double speed = 5.0;
+#else
+		double speed = 0.5;
+#endif
+		Vec v = camCsys * keyVelocity();
+		cam.position = cam.position + speed * v;
+
+		///*
 		auto mouse = sf::Mouse::getPosition(window);
-		auto mouseDelta = mouse - prevMouse;
+		auto size = window.getSize();
+		auto middle = sf::Vector2i(size.x / 2, size.y / 2);
+		auto dmouse = sf::Vector2i(mouse.x - middle.x, mouse.y - middle.y);
+		dmouse.y *= -1;
+		sf::Mouse::setPosition(middle, window);
 
+		Vec mouseVelocity = Vec(dmouse.x, dmouse.y, 0) / 300.0;
+		Vec worldTurn = camCsys * mouseVelocity;
+		cam.direction = (cam.direction + worldTurn).normalized();
+		cam.up = Vec(0, 0, 1).normalTo(cam.direction).normalized(); // not most efficient
+		//*/
 
 		//cam.position = rot * cam.position;
 		//cam.direction = -cam.position.normalized();
@@ -199,6 +225,7 @@ void rotateCube(sf::RenderWindow &window)
 int main()
 {
     sf::RenderWindow window(sf::VideoMode(640, 480), "Molasses works!");
+	sf::Mouse::setPosition(sf::Vector2i(320, 240), window);
 
 	rotateCube(window);
 

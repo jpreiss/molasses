@@ -4,7 +4,7 @@
 #include <limits>
 #include <algorithm>
 
-float const FltMin = std::numeric_limits<float>::min();
+float const FltLow = std::numeric_limits<float>::lowest();
 float const FltMax = std::numeric_limits<float>::max();
 
 class Bounds
@@ -16,13 +16,15 @@ public:
 	// default ctor: empty
 	Bounds() :
 		mins(FltMax, FltMax, FltMax),
-		maxes(FltMin, FltMin, FltMin)
+		maxes(FltLow, FltLow, FltLow)
 	{
 	}
 
 	bool empty() const
 	{
-		return mins[0] > maxes[0];
+		return mins[0] > maxes[0] 
+		    || mins[1] > maxes[1]
+		    || mins[2] > maxes[2];
 	}
 
 	void merge(Vec const &v)
@@ -33,32 +35,20 @@ public:
 
 	bool contains(Vec const &v) const
 	{
-		return v <= maxes && v >= mins;
-	}
-
-	void corners(Vec c[8]) const
-	{
-		Vec v[] = { mins, maxes };
-
-		for (int x = 0; x < 2; ++x)
-		for (int y = 0; y < 2; ++y)
-		for (int z = 0; z < 2; ++z)
-		{
-			c[x * 4 + y * 2 + z] = Vec(v[x].x, v[y].y, v[z].z);
-		}
+		return mins <= v && v <= maxes;
 	}
 
 	bool intersects(Bounds const &other) const
 	{
-		Vec thisCorners[8];
-		Vec otherCorners[8];
-		corners(thisCorners);
-		other.corners(otherCorners);
+		return !intersection(other).empty();
+	}
 
-		bool us = std::any_of(otherCorners, otherCorners + 8, [&](Vec const &v) { return contains(v); });
-		bool them = std::any_of(thisCorners, thisCorners + 8, [&](Vec const &v) { return other.contains(v); });
-
-		return us || them;
+	Bounds intersection(Bounds const &other) const
+	{
+		Bounds b;
+		b.mins = vmax(mins, other.mins);
+		b.maxes = vmin(maxes, other.maxes);
+		return b;
 	}
 
 	template <typename Iter>
