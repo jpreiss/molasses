@@ -13,6 +13,32 @@
 #include <fstream>
 #include <functional>
 
+// isn't right for the first 8 frames
+class FpsCounter
+{
+public:
+	FpsCounter() :
+		last8_(8)
+	{
+		clock_.restart();
+	}
+
+	void frame()
+	{
+		std::rotate(last8_.rbegin(), last8_.rbegin() + 1, last8_.rend());
+		last8_[0] = clock_.getElapsedTime();
+	}
+
+	double fps()
+	{
+		return 8.0 / (last8_.front() - last8_.back()).asSeconds();
+	}
+
+private:
+	sf::Clock clock_;
+	std::vector<sf::Time> last8_;
+};
+
 class VertexWithUnprojected : public VertexIn
 {
 public:
@@ -102,9 +128,7 @@ void rotateCube(sf::RenderWindow &window)
 	Array2D<float> zbuffer(height, width);
 	Array2D<ColorRGBA> fragments(height, width);
 
-	int counter = 0;
-	sf::Clock clock;
-	clock.restart();
+	FpsCounter counter;
 
 	Vec light = Vec(0, 30, 50);
 
@@ -177,6 +201,7 @@ void rotateCube(sf::RenderWindow &window)
 		Vec v = camCsys * keyVelocity();
 		cam.position = cam.position + speed * v;
 
+		window.setMouseCursorVisible(!mouse);
 		if (mouse)
 		{
 			auto mouse = sf::Mouse::getPosition(window);
@@ -201,7 +226,7 @@ void rotateCube(sf::RenderWindow &window)
 		VertexGlobal global;
 		global.view = view(cam);
 		global.modelView = view(cam) * flip;
-		global.modelViewProjection = projection(fov, 1, 100) * view(cam) * flip;
+		global.modelViewProjection = projection(fov, float(width)/height, 1, 100) * view(cam) * flip;
 		global.normal = Mat::transpose(Mat::invert(global.modelView));
 
 		Mat toScreen = normalizedToScreen(width, height);
@@ -232,9 +257,8 @@ void rotateCube(sf::RenderWindow &window)
         window.draw(sprite);
         window.display();
 
-		double fps = ((double) counter) / clock.getElapsedTime().asSeconds();
-		std::cout << fps << " FPS" << std::endl;
-		++counter;
+		counter.frame();
+		std::cout << counter.fps() << " FPS" << std::endl;
 	}
 }
 
