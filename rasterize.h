@@ -60,11 +60,21 @@ void rasterize(
 		toScreen * vtxProj[2],
 	};
 	
+	// incorrecat, overly agressive bounding box culling
+	// until i get real clipping
 	Bounds viewCube;
 	viewCube.merge(Vec(-1, -1, 0));
 	viewCube.merge(Vec(1, 1, 1));
 
 	Bounds object = Bounds::fromIterators(vtxProj, vtxProj + 3);
+
+	// partially outside
+	if (!viewCube.contains(vtxProj[0]) ||
+	    !viewCube.contains(vtxProj[1]) ||
+		!viewCube.contains(vtxProj[2]))
+	{
+		//return;
+	}
 
 	// completely outside
 	if (!viewCube.intersects(object))
@@ -91,23 +101,19 @@ void rasterize(
 	int ymin = max(0, (int)ceil(bbox.mins.y));
 	int ymax = min(height, (int)ceil(bbox.maxes.y));
 
-	Vec dbdx(toBary.a, toBary.c);
-	Vec dbdy(toBary.b, toBary.d);
-	Vec xtotal((xmax - xmin) * dbdx);
-
-	Vec bary = toBary * (Vec(xmin, ymin, 0) - vtxScreen[2]);
-
 	// need shadow rules for perfect int coords
-	for (int y = ymin; y < ymax; ++y)
+	for (int x = xmin; x < xmax; ++x)
 	{
-		for (int x = xmin; x < xmax; ++x)
+		for (int y = ymin; y < ymax; ++y)
 		{
+			Vec pt(x, y, 0);
+			Vec bary = toBary * (pt - vtxScreen[2]);
 			bary.z = 1 - (bary.x + bary.y);
 
 			if (bary.x < 0 || bary.y < 0 || bary.z < 0)
 			{
 				// outside tri
-				goto end;
+				continue;
 			}
 		
 			// early z test
@@ -116,7 +122,7 @@ void rasterize(
 
 			if (zinterp < 0)
 			{
-				goto end;
+				continue;
 			}
 			
 			if (x < zbuf.columns() && y < zbuf.rows() && zinterp < zbuf(height - y, x))
@@ -125,15 +131,6 @@ void rasterize(
 				VertexOut interpolant = perspectiveCorrectBaryInterp(a, b, c, bary, ws);			
 				fragments(height - y, x) = shadeFragment(interpolant, global).color;
 			}
-
-end:
-			bary.x += dbdx.x;
-			bary.y += dbdx.y;
 		}
-
-		bary.x += dbdy.x;
-		bary.y += dbdy.y;
-		bary.x -= xtotal.x;
-		bary.y -= xtotal.y;
 	}
 }

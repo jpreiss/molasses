@@ -34,11 +34,6 @@ public:
 		return 8.0 / (last8_.front() - last8_.back()).asSeconds();
 	}
 
-	double sinceLast()
-	{
-		return (last8_[0] - last8_[1]).asSeconds();
-	}
-
 private:
 	sf::Clock clock_;
 	std::vector<sf::Time> last8_;
@@ -198,8 +193,11 @@ void rotateCube(sf::RenderWindow &window)
 
 		Mat camCsys = Mat::transpose(view(cam).withoutTranslation());
 
-		double speed = counter.sinceLast() * 80;
-
+#ifdef _DEBUG
+		double speed = 5.0;
+#else
+		double speed = 0.5;
+#endif
 		Vec v = camCsys * keyVelocity();
 		cam.position = cam.position + speed * v;
 
