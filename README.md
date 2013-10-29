@@ -18,6 +18,7 @@ This makes my C++ template based shader approach useless.
 GPUs solve the problem by compiling your shader and introducing the parallelism in hardware.
 I'm beginning to think that I need to write a shader compiler
 accepting a limited mathematical input language and outputting cache-optimized SSE2 code.
+I could also write an expression template system in C++.
 
 ---------------------------------------------------
 
