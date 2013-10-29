@@ -101,7 +101,7 @@ void rotateCube(sf::RenderWindow &window)
 	int height = size.y;
 
 	sf::Image texture;
-	texture.loadFromFile("../../cube.png");
+	texture.loadFromFile("../../../../models/cube.png");
 	auto raw = texture.getPixelsPtr();
 	Array2D<ColorRGBA> tex(24, 32);
 	std::copy(raw, raw + (4 * 32 * 24), (unsigned char *)tex.raw());
@@ -110,7 +110,7 @@ void rotateCube(sf::RenderWindow &window)
 	std::vector<int> tris;
 	std::vector<Vec> normals;
 	std::vector<int> triNormals;
-	std::ifstream teapot("../../teapot.obj");
+	std::ifstream teapot("../../../../models/teapot.obj");
 	readObj(teapot, verts, &normals, nullptr, tris, &triNormals, nullptr);
 
 	// rectify teapot model
