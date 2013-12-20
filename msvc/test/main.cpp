@@ -47,6 +47,7 @@ private:
 class VertexWithUnprojected : public VertexIn
 {
 public:
+	Vec vertexWorld;
 	Vec vertexUnprojected;
 };
 
@@ -54,6 +55,7 @@ VertexWithUnprojected operator+(VertexWithUnprojected const &a, VertexWithUnproj
 {
 	VertexWithUnprojected out;
 	(VertexIn &)out = (VertexIn &)a + (VertexIn &)b;
+	out.vertexWorld = a.vertexWorld + b.vertexWorld;
 	out.vertexUnprojected = a.vertexUnprojected + b.vertexUnprojected;
 	return out;
 }
@@ -62,6 +64,7 @@ VertexWithUnprojected operator*(float s, VertexWithUnprojected const &a)
 {
 	VertexWithUnprojected out;
 	(VertexIn &)out = s * (VertexIn &)a;
+	out.vertexWorld = s * a.vertexWorld;
 	out.vertexUnprojected = s * a.vertexUnprojected;
 	return out;
 }
@@ -102,9 +105,16 @@ void rotateCube(sf::RenderWindow &window)
 
 	sf::Image texture;
 	texture.loadFromFile("../../../../models/cube.png");
-	auto raw = texture.getPixelsPtr();
+	auto texRaw = texture.getPixelsPtr();
 	Array2D<ColorRGBA> tex(24, 32);
-	std::copy(raw, raw + (4 * 32 * 24), (unsigned char *)tex.raw());
+	std::copy(texRaw, texRaw + (4 * 32 * 24), (unsigned char *)tex.raw());
+
+	sf::Image environment;
+	environment.loadFromFile("../../../../models/environment.jpg");
+	auto envRaw = environment.getPixelsPtr();
+	auto dim = environment.getSize();
+	Array2D<ColorRGBA> enviro(dim.y, dim.x);
+	std::copy(envRaw, envRaw + (4 * dim.y * dim.x), (unsigned char *)enviro.raw());
 
 	std::vector<Vec> verts;
 	std::vector<int> tris;
@@ -140,31 +150,25 @@ void rotateCube(sf::RenderWindow &window)
 	auto vertShade = [](VertexIn const &in, VertexGlobal const &global) -> VertexWithUnprojected
 	{
 		VertexWithUnprojected out;
-		//out.coord = in.coord;
-		out.normal = global.modelView.withoutTranslation() * in.normal;
-		out.vertex = global.modelViewProjection * in.vertex;
-		out.vertexUnprojected = global.modelView * in.vertex;
+		out.normal = global.modelView.withoutTranslation() * in.normal; // eye space
+		out.vertexUnprojected = global.modelView * in.vertex; // eye space
+		out.vertex = global.modelViewProjection * in.vertex; // screen space
 		return out;
 	};
 
 	auto fragShade = [&](VertexWithUnprojected const &v, VertexGlobal const &global) -> FragmentOut
 	{
 		FragmentOut f;
-		Vec eyeLight = global.view * light;
-		Vec toLight = (eyeLight - v.vertexUnprojected).normalized();
-		Vec normal = v.normal.normalized();
-		float diffuse = clamp(dot(normal, toLight), 0.0f, 1.0f);
+		Vec normal = v.normal.normalized(); // eye space
+		Vec eye = -v.vertexUnprojected; // eye space
+		Vec eyeReflected = eye.projectedTo(normal) - eye.normalTo(normal); // eye space
+		Vec eyeReflectedInWorld = Mat::transpose(global.view) * eyeReflected; // eye space
+		Vec envSpherical = toSpherical(eyeReflectedInWorld ); // world space
+		auto sz = environment.getSize();
+		float imX = (envSpherical.x * sz.x) / (2 * PI);
+		float imY = (envSpherical.y * sz.y) / PI;
 
-		Vec reflection = toLight.projectedTo(normal) - toLight.normalTo(normal);
-		float specular = pow(clamp(-reflection.z, 0.0f, 1.0f), 8);
-
-		float ambient = 0.1;
-
-		f.color = 
-			diffuse * ColorRGBA(20, 70, 150) +
-			specular * ColorRGBA(100, 200, 255) +
-			ambient * ColorRGBA(100, 150, 200);
-
+		f.color = enviro(imY, imX);
 		return f;
 	};
 

@@ -145,3 +145,17 @@ bool operator>=(Vec const &a, Vec const &b)
 {
 	return b <= a;
 }
+
+// spherical coordinates:
+// azimuth from 0 to 2pi
+// elevation from 0 (ceiling) to pi (floor)
+// so elevations match image coords for environment maps
+// radius
+Vec toSpherical(Vec const &cartesian)
+{
+	float radius = cartesian.length();
+	Vec cnorm = cartesian / radius;
+	float elevation = acos(cnorm.z);
+	float azimuth = atan2(cnorm.y, cnorm.x) + PI;
+	return Vec(azimuth, elevation, radius);
+}

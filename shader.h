@@ -10,6 +10,7 @@ class VertexGlobal
 {
 public:
 	Mat view;
+	Mat model;
 	Mat modelView;
 	Mat modelViewProjection;
 	Mat normal;
