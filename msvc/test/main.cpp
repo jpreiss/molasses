@@ -168,7 +168,7 @@ void rotateCube(sf::RenderWindow &window)
 		float imX = (envSpherical.x * sz.x) / (2 * PI);
 		float imY = (envSpherical.y * sz.y) / PI;
 
-		f.color = enviro(imY, imX);
+		f.color = bilinear(enviro, imX, imY);
 		return f;
 	};
 

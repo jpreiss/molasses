@@ -20,9 +20,6 @@ T nearestNeighbor(Array2D<T> const &tex, float x, float y)
 template <typename T>
 T bilinear(Array2D<T> const &tex, float x, float y)
 {
-	x = x - 0.5;
-	y = y - 0.5;
-
 	int x0 = x;
 	int x1 = x0 + 1;
 	int y0 = y;
