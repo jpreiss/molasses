@@ -29,7 +29,7 @@ public:
 		return (unsigned char *)this;
 	}
 
-	ColorRGBA fromMemory(unsigned char *arr)
+	static ColorRGBA fromMemory(unsigned char *arr)
 	{
 		return ColorRGBA(arr[0], arr[1], arr[2], arr[3]);
 	}
