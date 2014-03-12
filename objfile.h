@@ -14,12 +14,12 @@ std::istream &operator>>(std::istream &s, Vec &v)
 
 // reads OBJ file, just vertices and tris for now.
 void readObj(std::istream &file, 
-			 std::vector<Vec> &vertices,
-			 std::vector<Vec> *normals,
-			 std::vector<Vec> *texCoords,
-			 std::vector<int> &triVerts,
-			 std::vector<int> *triNorms,
-			 std::vector<int> *triCoords)
+             std::vector<Vec> &vertices,
+             std::vector<Vec> *normals,
+             std::vector<Vec> *texCoords,
+             std::vector<int> &triVerts,
+             std::vector<int> *triNorms,
+             std::vector<int> *triCoords)
 {
 	std::string prefix;
 
