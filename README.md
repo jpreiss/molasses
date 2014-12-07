@@ -5,7 +5,10 @@ software renderer.
 
 ![ScreenShot](https://raw.github.com/jpreiss/molasses/master/molasses.png)
 
-vertex/fragment shader system using C++ templates.
+Has a vertex/fragment shader system using C++ templates.
+Draws into a user-supplied buffer; it has no dependencies on OS or a graphics library.
+
+The `/test/` folder is not unit tests.  It contains an application that loads a model, gets a window from the OS, calls into the renderer, and reads the keyboard and mouse to move around.  It uses the SFML library to do those tasks.
 
 Game-style controls:
 
@@ -15,11 +18,6 @@ Game-style controls:
     D - right
     Space - up
     Ctrl - down
-    
-
-The core renderer draws into a user-supplied buffer; it has no dependencies on OS or a graphics library.
-
-The `/test/` folder uses SFML to draw into a window and read the keyboard/mouse.
 
 It only compiles on Windows currently because it has no Make file and it is not tested on POSIX compilers, but it is fundamentally platform-independent so that will be easy to fix when I get time.
 
@@ -39,5 +37,3 @@ GPUs solve the problem by compiling your shader and introducing the parallelism 
 I'm beginning to think that I need to write a shader compiler
 accepting a limited mathematical input language and outputting cache-optimized SSE2 code.
 I could also write an expression template system in C++.
-
-
