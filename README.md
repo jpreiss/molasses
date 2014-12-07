@@ -3,6 +3,8 @@ molasses
 
 software renderer.
 
+![ScreenShot](https://raw.github.com/jpreiss/molasses/master/molasses.png)
+
 vertex/fragment shader system using C++ templates.
 
 Game-style controls:
@@ -38,6 +40,4 @@ I'm beginning to think that I need to write a shader compiler
 accepting a limited mathematical input language and outputting cache-optimized SSE2 code.
 I could also write an expression template system in C++.
 
----------------------------------------------------
 
-![ScreenShot](https://raw.github.com/jpreiss/molasses/master/molasses.png)
