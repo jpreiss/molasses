@@ -37,3 +37,4 @@ GPUs solve the problem by compiling your shader and introducing the parallelism 
 I'm beginning to think that I need to write a shader compiler
 accepting a limited mathematical input language and outputting cache-optimized SSE2 code.
 I could also write an expression template system in C++.
+I have learned more about compilers since I last worked on this project, so I think I will probably go with the compiler solution.
