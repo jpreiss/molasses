@@ -1,13 +1,31 @@
 molasses
 ========
 
-software renderer
+software renderer.
 
-Here's an update.
-The framerate is already crappy just running per-pixel Phong lighting on the Teapot with a single light.
-I used a profiler and found out that almost all execution time is spent running the shaders themselves -
-not on rasterization overhead, copying frames inefficiently, or anything else.
-This has seriously dampened my motivation to continue with more advanced gfx stuff like shadows, bump mapping, etc.
+vertex/fragment shader system using C++ templates.
+
+Game-style controls:
+
+    W - forward
+    S - back
+    A - left
+    D - right
+    Space - up
+    Ctrl - down
+    
+
+The core renderer draws into a user-supplied buffer; it has no dependencies on OS or a graphics library.
+
+The `/test/` folder uses SFML to draw into a window and read the keyboard/mouse.
+
+It only compiles on Windows currently because it has no Make file and it is not tested on POSIX compilers, but it is fundamentally platform-independent so that will be easy to fix when I get time.
+
+Here's the current status.
+The framerate is already poor just running per-pixel Phong lighting on the Teapot with a single light.
+Until I can speed it up, I don't want to continue with more advanced gfx stuff like shadows, bump mapping, etc.
+
+I previously thought I was spending all my time in the shaders, which was disappointing, but now I have gotten better at using profilers so I don't trust my previous results.
 
 I would like to try to use SSE2 SIMD instructions to speed up math, but that requires a whole new shader approach.
 Each arithmetic operation has to be batched together across 4 shaders.
@@ -21,7 +39,5 @@ accepting a limited mathematical input language and outputting cache-optimized S
 I could also write an expression template system in C++.
 
 ---------------------------------------------------
-
-`/test/` folder requires SFML dependency.
 
 ![ScreenShot](https://raw.github.com/jpreiss/molasses/master/molasses.png)
