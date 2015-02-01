@@ -16,6 +16,7 @@ build/
 [Oo]bj/
 
 *.out
+molasses-test
 
 # MSTest test Results
 [Tt]est[Rr]esult*/

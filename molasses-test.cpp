@@ -165,7 +165,9 @@ void rotateCube(sf::RenderWindow &window)
 		float diffuse = clamp(dot(normal, toLight), 0.0f, 1.0f);
 
 		Vec reflection = toLight.projectedTo(normal) - toLight.normalTo(normal);
-		float specular = pow(clamp(-reflection.z, 0.0f, 1.0f), 8);
+		float specular = clamp(-reflection.z, 0.0f, 1.0f);
+		specular *= specular;
+		specular *= specular;
 
 		float ambient = 0.3;
 

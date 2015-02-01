@@ -11,7 +11,7 @@ T baryInterp(T const &a, T const &b, T const &c, Vec const &bary)
 }
 
 template <typename T>
-T perspectiveCorrectBaryInterp(T const &a, T const &b, T const &c, Vec const &bary, Vec const &ws)
+inline T perspectiveCorrectBaryInterp(T const &a, T const &b, T const &c, Vec const &bary, Vec const &ws)
 {
 	Vec invWs(1 / ws.x, 1 / ws.y, 1 / ws.z);
 
