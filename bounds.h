@@ -27,6 +27,11 @@ public:
 		    || mins[2] > maxes[2];
 	}
 
+	Vec center() const
+	{
+		return (mins + maxes) / 2;
+	}
+
 	void merge(Vec const &v)
 	{
 		mins = vmin(v, mins);

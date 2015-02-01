@@ -18,6 +18,9 @@ build/
 *.out
 molasses-test
 
+arial.ttf
+.DS_Store
+
 # MSTest test Results
 [Tt]est[Rr]esult*/
 [Bb]uild[Ll]og.*

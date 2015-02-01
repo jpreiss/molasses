@@ -103,9 +103,9 @@ void rasterize(
 	int ymax = min(height, (int)ceil(bbox.maxes.y));
 
 	// need shadow rules for perfect int coords
-	for (int x = xmin; x < xmax; ++x)
+	for (int y = ymin; y < ymax; ++y)
 	{
-		for (int y = ymin; y < ymax; ++y)
+		for (int x = xmin; x < xmax; ++x)
 		{
 			Vec pt(x, y, 0);
 			Vec bary = toBary * (pt - vtxScreen[2]);
@@ -126,8 +126,8 @@ void rasterize(
 				continue;
 			}
 			
-			// should be unnecessary, already clamped in loop ranges`
-			if (x < zbuf.columns() && y < zbuf.rows() && zinterp < zbuf(height - y, x))
+			// x and y checks should be unnecessary, already clamped in loop ranges`
+			if (/*x < zbuf.columns() && y < zbuf.rows() &&*/ zinterp < zbuf(height - y, x))
 			{
 				zbuf(height - y, x) = zinterp;
 				VertexOut interpolant = perspectiveCorrectBaryInterp(a, b, c, bary, ws);			

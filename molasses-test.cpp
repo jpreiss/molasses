@@ -10,6 +10,8 @@
 #include "objfile.h"
 #include "bounds.h"
 #include <iostream>
+#include <iomanip>
+#include <sstream>
 #include <fstream>
 #include <functional>
 
@@ -31,7 +33,7 @@ public:
 
 	double fps()
 	{
-		return 8.0 / (last8_.front() - last8_.back()).asSeconds();
+		return 7.0 / (last8_.front() - last8_.back()).asSeconds();
 	}
 
 	double sinceLast()
@@ -95,6 +97,25 @@ Vec keyVelocity()
 	return velocity.normalized();
 }
 
+std::ostream &operator<<(std::ostream &s, Vec v)
+{
+	s << "(" << v.x << ", " << v.y << ", " << v.z << ")";
+	return s;
+}
+
+void printMatrix(std::ostream &s, Mat m)
+{
+	for (int r = 0; r < 4; ++r) {
+		for (int c = 0; c < 4; ++c) {
+			s << std::setiosflags(std::ios::fixed)
+				<< std::setprecision(3)
+				<< std::setw(8);
+			s << m(r, c);
+		}
+		s << "\n";
+	}
+}
+
 void rotateCube(sf::RenderWindow &window)
 {
 	bool mouse = true;
@@ -103,11 +124,13 @@ void rotateCube(sf::RenderWindow &window)
 	int width = size.x;
 	int height = size.y;
 
+	/*
 	sf::Image texture;
 	texture.loadFromFile("models/cube.png");
 	auto texRaw = texture.getPixelsPtr();
 	Array2D<ColorRGBA> tex(24, 32);
 	std::copy(texRaw, texRaw + (4 * 32 * 24), (unsigned char *)tex.data());
+	*/
 
 	std::vector<Vec> verts;
 	std::vector<int> tris;
@@ -117,12 +140,10 @@ void rotateCube(sf::RenderWindow &window)
 	readObj(teapot, verts, &normals, nullptr, tris, &triNormals, nullptr);
 
 	// rectify teapot model
-	Mat flip = Mat::fromRows33(Vec(1, 0, 0), Vec(0, 0, -1), Vec(0, 1, 0));
-
-	Quat rot = Quat::from_axis_angle(Vec(0, 0, 1), 0.005);
+	Mat teapotRectify = Mat::fromRows33(Vec(1, 0, 0), Vec(0, 0, -1), Vec(0, 1, 0));
 
 	Camera cam;
-	cam.position = Vec(30, 0, 5);
+	cam.position = Vec(30, 14, 5);
 
 	// replace angle calc with mouse once it's ready
 	cam.direction = -cam.position.normalized();
@@ -135,6 +156,7 @@ void rotateCube(sf::RenderWindow &window)
 
 	Array2D<float> zbuffer(height, width);
 	Array2D<ColorRGBA> fragments(height, width);
+
 
 	FpsCounter counter;
 
@@ -161,7 +183,8 @@ void rotateCube(sf::RenderWindow &window)
 		FragmentOut f;
 		Vec eyeLight = global.view * light;
 		Vec toLight = (eyeLight - v.vertexUnprojected).normalized();
-		Vec normal = v.normal.normalized();
+		//Vec normal = v.normal.normalized();
+		Vec normal = v.normal;
 		float diffuse = clamp(dot(normal, toLight), 0.0f, 1.0f);
 
 		Vec reflection = toLight.projectedTo(normal) - toLight.normalTo(normal);
@@ -180,14 +203,27 @@ void rotateCube(sf::RenderWindow &window)
 
 		return f;
 	};
+	
+	// Declare and load a font
+	sf::Font font;
+	if (!font.loadFromFile("arial.ttf")) {
+		std::cout << "failed to load font\n";
+		return;
+	}
+
+	// Create a text
+	sf::Text text("hello", font);
+	text.setCharacterSize(16);
+	text.setColor(sf::Color::Red);
+	text.setPosition(10, 10);
 
 	while (window.isOpen())
-    {
-        sf::Event event;
-        while (window.pollEvent(event))
-        {
-            if (event.type == sf::Event::Closed)
-                window.close();
+	{
+		sf::Event event;
+		while (window.pollEvent(event))
+		{
+			if (event.type == sf::Event::Closed)
+				window.close();
 
 			if (event.type == sf::Event::KeyPressed)
 			{
@@ -208,7 +244,7 @@ void rotateCube(sf::RenderWindow &window)
 			{
 				mix = 1.0;
 			}
-        }
+		}
 
 		std::fill(zbuffer.begin(), zbuffer.end(), std::numeric_limits<float>::max());
 		std::fill(fragments.begin(), fragments.end(), ColorRGBA());
@@ -227,6 +263,7 @@ void rotateCube(sf::RenderWindow &window)
 			auto size = window.getSize();
 			auto middle = sf::Vector2i(size.x / 2, size.y / 2);
 			auto dmouse = sf::Vector2i(mouse.x - middle.x, mouse.y - middle.y);
+
 			dmouse.y *= -1;
 			sf::Mouse::setPosition(middle, window);
 
@@ -244,8 +281,8 @@ void rotateCube(sf::RenderWindow &window)
 
 		VertexGlobal global;
 		global.view = view(cam);
-		global.modelView = view(cam) * flip;
-		global.modelViewProjection = projection(fov, float(width)/height, 1, 100) * view(cam) * flip;
+		global.modelView = view(cam) * teapotRectify;
+		global.modelViewProjection = projection(fov, float(width)/height, 10, 100) * global.modelView;
 		global.normal = Mat::transpose(Mat::invert(global.modelView));
 
 		Mat toScreen = normalizedToScreen(width, height);
@@ -272,12 +309,15 @@ void rotateCube(sf::RenderWindow &window)
 
 		screen.update((sf::Uint8 const *)fragments.data(), width, height, 0, 0);
 
-		window.clear();
-        window.draw(sprite);
-        window.display();
-
 		counter.frame();
-		std::cout << counter.fps() << " FPS" << std::endl;
+		std::ostringstream oss;
+		oss << (int)counter.fps() << " FPS" << std::endl;
+		text.setString(oss.str());
+
+		window.clear();
+		window.draw(sprite);
+		window.draw(text);
+		window.display();
 
 		mix -= 2.0 * counter.sinceLast() * mix;
 		mixed = mix * green + (1.0 - mix) * red;
@@ -286,10 +326,24 @@ void rotateCube(sf::RenderWindow &window)
 
 int main()
 {
-    sf::RenderWindow window(sf::VideoMode(640, 480), "Molasses works!");
-	sf::Mouse::setPosition(sf::Vector2i(320, 240), window);
+	auto modes = sf::VideoMode::getFullscreenModes();
+	auto mode = modes[0];
+
+	// if retina screen, find the half-resolution, they are too big to render fast
+	if (mode.width > 1920) {
+		for (auto m = modes.begin() + 1; m != modes.end(); ++m) {
+			if (m->width == mode.width / 2 && m->height == mode.height / 2) {
+				mode = *m;
+			}
+		}
+	}
+
+	sf::RenderWindow window(mode, "Molasses works!", sf::Style::Fullscreen);
+	window.setVerticalSyncEnabled(true);
+
+	sf::Mouse::setPosition(sf::Vector2i(mode.width / 2, mode.height / 2), window);
 
 	rotateCube(window);
 
-    return 0;
+	return 0;
 }
