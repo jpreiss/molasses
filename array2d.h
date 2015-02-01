@@ -1,4 +1,21 @@
-#pragma once
+#ifndef __ARRAY2D_HPP__
+#define __ARRAY2D_HPP__
+
+//
+// StaticArray2D has fixed size at compile-time,
+// DynamicArray2D has fixed size at construction.
+//
+// Memory is stored in a contiguous block.
+// begin() and end() "iterators" allow std::algorithm compatibility.
+//
+// Operator() is used for 2D indexing.
+// Oprerator[] is used for 1D indexing.
+// Arrays are row-major: arr(3, 1) and arr(3, 2) are consecutive in memory.
+//
+//
+// Copyright 2013 James Preiss.
+// Public Domain - Attribution is appreciated.
+//
 
 #include <utility>
 
@@ -65,16 +82,6 @@ public:
 		return data_;
 	}
 
-	void const *raw() const
-	{
-		return data_;
-	}
-
-	void *raw()
-	{
-		return data_;
-	}
-
 	T const *begin() const
 	{
 		return data_;
@@ -116,15 +123,6 @@ public:
 		delete[] data_;
 	}
 
-	// default-construct all data
-	void fill(T const &value = T())
-	{
-		for (size_t i = 0; i < rows_ * columns_; ++i)
-		{
-			data_[i] = value;
-		}
-	}
-
 	size_t rows() const
 	{
 		return rows_;
@@ -135,11 +133,6 @@ public:
 		return columns_;
 	}
 
-	size_t size() const
-	{
-		return rows() * columns();
-	}
-
 	size_t to1D(size_t row, size_t column) const
 	{
 		return row * columns_ + column;
@@ -147,7 +140,7 @@ public:
 
 	std::pair<size_t, size_t> to2D(size_t index) const
 	{
-		return std::make_pair(index / Columns, index % Columns);
+		return std::make_pair(index / columns_, index % columns_);
 	}
 
 	T const &operator[](size_t index) const
@@ -179,16 +172,6 @@ public:
 	{
 		return data_;
 	}
-	
-	void const *raw() const
-	{
-		return data_;
-	}
-
-	void *raw()
-	{
-		return data_;
-	}
 
 	T const *begin() const
 	{
@@ -215,3 +198,4 @@ private:
 	size_t columns_;
 	T *data_;
 };
+#endif // __ARRAY2D_HPP__

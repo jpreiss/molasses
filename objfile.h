@@ -2,7 +2,7 @@
 
 #include <vector>
 #include <string>
-#include <iosfwd>
+#include <iostream>
 
 std::istream &operator>>(std::istream &s, Vec &v)
 {

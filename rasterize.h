@@ -2,6 +2,13 @@
 #include "array2d.h"
 #include "util.h"
 #include "shader.h"
+#include "bounds.h"
+
+template <typename T>
+T baryInterp(T const &a, T const &b, T const &c, Vec const &bary)
+{
+	return bary.x * a + bary.y * b + bary.z * c;
+}
 
 template <typename T>
 T perspectiveCorrectBaryInterp(T const &a, T const &b, T const &c, Vec const &bary, Vec const &ws)
@@ -18,12 +25,6 @@ T perspectiveCorrectBaryInterp(T const &a, T const &b, T const &c, Vec const &ba
 	T correct = (1.0 / invWInterp) * val;
 
 	return correct;
-}
-
-template <typename T>
-T baryInterp(T const &a, T const &b, T const &c, Vec const &bary)
-{
-	return bary.x * a + bary.y * b + bary.z * c;
 }
 
 Vec triNormal(Vec const &a, Vec const &b, Vec const &c)
@@ -49,9 +50,9 @@ void rasterize(
 	Vec ws(a.vertex.w, b.vertex.w, c.vertex.w);
 
 	Vec vtxProj[] = {
-		a.vertex / abs(a.vertex.w),
-		b.vertex / abs(b.vertex.w),
-		c.vertex / abs(c.vertex.w),
+		a.vertex / fabs(a.vertex.w),
+		b.vertex / fabs(b.vertex.w),
+		c.vertex / fabs(c.vertex.w),
 	};
 	
 	Vec vtxScreen[] = {
@@ -125,6 +126,7 @@ void rasterize(
 				continue;
 			}
 			
+			// should be unnecessary, already clamped in loop ranges`
 			if (x < zbuf.columns() && y < zbuf.rows() && zinterp < zbuf(height - y, x))
 			{
 				zbuf(height - y, x) = zinterp;
@@ -133,4 +135,19 @@ void rasterize(
 			}
 		}
 	}
+	// debug - vertex points
+	/*
+	for (int iv = 0; iv < 3; ++iv) {
+		int x = vtxScreen[iv].x;
+		int y = vtxScreen[iv].y;
+		float z = vtxScreen[iv].z;
+		if ((z - 0.001) < zbuf(height - y, x)) {
+			for (int ii = 0; ii < 2; ++ii) {
+				for (int jj = 0; jj < 2; ++jj) {
+					fragments(height - y + ii, x + jj) = {255, 255, 255};
+				}
+			}
+		}
+	}
+	*/
 }
