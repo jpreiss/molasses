@@ -32,6 +32,11 @@ public:
 		return (mins + maxes) / 2;
 	}
 
+	Vec size() const
+	{
+		return maxes - mins;
+	}
+
 	void merge(Vec const &v)
 	{
 		mins = vmin(v, mins);

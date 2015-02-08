@@ -9,6 +9,8 @@
 #include "texture.h"
 #include "objfile.h"
 #include "bounds.h"
+#include "randomvec.h"
+#include "hull.h"
 #include <iostream>
 #include <iomanip>
 #include <sstream>
@@ -142,6 +144,20 @@ void rotateCube(sf::RenderWindow &window)
 	// rectify teapot model
 	Mat teapotRectify = Mat::fromRows33(Vec(1, 0, 0), Vec(0, 0, -1), Vec(0, 1, 0));
 
+	Bounds bds = Bounds::fromIterators(verts.begin(), verts.end());
+	float roomSz = vabs(bds.size()).maxXYZEl();
+	float floorZ = bds.mins.y; // rectified
+	Vec floorVerts[] = {
+		{roomSz, roomSz, floorZ, 1},
+		{-roomSz, roomSz, floorZ, 1},
+		{-roomSz, -roomSz, floorZ, 1},
+		{roomSz, -roomSz, floorZ, 1},
+	};
+	int floorTris[] = {
+		0, 1, 3,
+		3, 1, 2,
+	};
+
 	Camera cam;
 	cam.position = Vec(30, 14, 5);
 
@@ -165,7 +181,7 @@ void rotateCube(sf::RenderWindow &window)
 	auto vertShade = [](VertexIn const &in, VertexGlobal const &global) -> VertexWithUnprojected
 	{
 		VertexWithUnprojected out;
-		//out.coord = in.coord;
+		out.coord = in.coord;
 		out.normal = global.modelView.withoutTranslation() * in.normal;
 		out.vertex = global.modelViewProjection * in.vertex;
 		out.vertexUnprojected = global.modelView * in.vertex;
@@ -178,7 +194,7 @@ void rotateCube(sf::RenderWindow &window)
 	ColorRGBA mixed;
 	float mix = 0;
 
-	auto fragShade = [&](VertexWithUnprojected const &v, VertexGlobal const &global) -> FragmentOut
+	auto fragShadeShiny = [&](VertexWithUnprojected const &v, VertexGlobal const &global) -> FragmentOut
 	{
 		FragmentOut f;
 		Vec eyeLight = global.view * light;
@@ -195,7 +211,7 @@ void rotateCube(sf::RenderWindow &window)
 		float ambient = 0.3;
 
 		f.color = 
-			diffuse * ColorRGBA(20, 70, 150) +
+			diffuse * mixed +
 			specular * ColorRGBA(100, 200, 255) +
 			ambient * ColorRGBA(100, 150, 200);
 
@@ -204,6 +220,21 @@ void rotateCube(sf::RenderWindow &window)
 		return f;
 	};
 	
+	auto fragShadeChecker = [&](VertexWithUnprojected const &v, VertexGlobal const &global) -> FragmentOut
+	{
+		static int i = 0;
+		FragmentOut f;
+		float SCALE = 0.2;
+		int xx = 10000 + SCALE * v.coord.x;
+		int yy = 10000 + SCALE * v.coord.y;
+		if ((xx & 1) != (yy & 1)) {
+			f.color = ColorRGBA(0, 0, 0);
+		}
+		else {
+			f.color = ColorRGBA(0, 0x99 , 0xFF);
+		}
+		return f;
+	};
 	// Declare and load a font
 	sf::Font font;
 	if (!font.loadFromFile("arial.ttf")) {
@@ -296,15 +327,43 @@ void rotateCube(sf::RenderWindow &window)
 
 			VertexWithUnprojected shaded[3];
 
-			for (int i = 0; i < 3; ++i)
+			for (int j = 0; j < 3; ++j)
 			{
-				vertices[i].vertex = verts[tri[i]];
-				vertices[i].normal = normals[triNorm[i]];
-				//vertices[i].coord = texCoords[tri[i]];
-				shaded[i] = vertShade(vertices[i], global);
+				vertices[j].vertex = verts[tri[j]];
+				vertices[j].normal = normals[triNorm[j]];
+				//vertices[j].coord = texCoords[tri[j]];
+				shaded[j] = vertShade(vertices[j], global);
 			}
 
-			rasterize(shaded[0], shaded[1], shaded[2], fragShade, zbuffer, fragments, toScreen, global);
+			rasterize(shaded[0], shaded[1], shaded[2], fragShadeShiny, zbuffer, fragments, toScreen, global);
+		}
+
+		global.view = view(cam);
+		global.modelView = view(cam);
+		global.modelViewProjection = projection(fov, float(width)/height, 1, 100) * global.modelView;
+		global.normal = Mat::transpose(Mat::invert(global.modelView));
+
+		for (int i = 0; i < 2; ++i)
+		{
+			int *tri = floorTris + 3 * i;
+
+			VertexIn vertices[3];
+
+			VertexWithUnprojected shaded[3];
+
+			for (int j = 0; j < 3; ++j)
+			{
+				vertices[j].vertex = floorVerts[tri[j]];
+				vertices[j].normal = {0, 0, 1};
+				vertices[j].coord = {vertices[j].vertex};
+				vertices[j].coord.z = 0;
+				vertices[j].coord.w = 0;
+				std::cout << vertices[j].coord;
+
+				shaded[j] = vertShade(vertices[j], global);
+			}
+
+			rasterize(shaded[0], shaded[1], shaded[2], fragShadeChecker, zbuffer, fragments, toScreen, global);
 		}
 
 		screen.update((sf::Uint8 const *)fragments.data(), width, height, 0, 0);
@@ -321,6 +380,104 @@ void rotateCube(sf::RenderWindow &window)
 
 		mix -= 2.0 * counter.sinceLast() * mix;
 		mixed = mix * green + (1.0 - mix) * red;
+	}
+}
+
+void hull_test(sf::RenderWindow &window)
+{
+	auto size = window.getSize();
+	int width = size.x;
+	int height = size.y;
+
+	vec2 mins = vec2::zero();
+	vec2 maxs = {(float)width, (float)height};
+
+	int NPTS = 100;
+	std::vector<vec2> pts(NPTS);
+	std::vector<vec2> hull;
+	Array2D<ColorRGBA> fragments(height, width);
+
+	auto regenerate = [&]()
+	{
+		std::fill(fragments.begin(), fragments.end(), ColorRGBA(0,0,0));
+		random_uniform(mins, maxs, pts.begin(), pts.end());
+		hull = convex_hull(pts.data(), pts.size());
+	};
+
+	regenerate();
+
+
+	sf::Texture screen;
+	screen.create(width, height);
+	sf::Sprite sprite;
+	sprite.setTexture(screen);
+
+	while (window.isOpen())
+	{
+		sf::Event event;
+		while (window.pollEvent(event))
+		{
+			if (event.type == sf::Event::Closed) {
+				window.close();
+			}
+			else if (event.type == sf::Event::KeyPressed)
+			{
+				if (event.key.code == sf::Keyboard::P) {
+					screen.copyToImage().saveToFile("../../molasses.png");
+				}
+				else if (event.key.code == sf::Keyboard::Q) {
+					window.close();
+				}
+				else if (event.key.code == sf::Keyboard::H) {
+					regenerate();
+				}
+			}
+			else if (event.type == sf::Event::MouseButtonPressed)
+			{
+				//mix = 1.0;
+			}
+		}
+
+		ColorRGBA green(0x22, 0xFF, 0xBB);
+		ColorRGBA red(0xFF, 0, 0);
+		ColorRGBA white(0xFF, 0xFF, 0xFF);
+
+		auto fat_point = [](Array2D<ColorRGBA> &img, vec2 pt, ColorRGBA color)
+		{
+			img(pt.y - 1, pt.x - 1) = color;
+			img(pt.y + 0, pt.x - 1) = color;
+			img(pt.y + 1, pt.x - 1) = color;
+
+			img(pt.y - 1, pt.x) = color;
+			img(pt.y + 0, pt.x) = color;
+			img(pt.y + 1, pt.x) = color;
+
+			img(pt.y - 1, pt.x + 1) = color;
+			img(pt.y + 0, pt.x + 1) = color;
+			img(pt.y + 1, pt.x + 1) = color;
+		};
+
+		for (vec2 pt : pts) {
+			fat_point(fragments, pt, green);
+		}
+
+		auto p0 = hull.begin();
+		auto p1 = p0 + 1;
+		auto hend = hull.end();
+		for (; p1 != hend; ++p0, ++p1) {
+			drawLine2D(*p0, *p1, fragments, white);
+		}
+		drawLine2D(*p0, *hull.begin(), fragments, white);
+
+		for (vec2 pt : hull) {
+			fat_point(fragments, pt, red);
+		}
+
+		screen.update((sf::Uint8 const *)fragments.data(), width, height, 0, 0);
+
+		window.clear();
+		window.draw(sprite);
+		window.display();
 	}
 }
 
@@ -343,7 +500,8 @@ int main()
 
 	sf::Mouse::setPosition(sf::Vector2i(mode.width / 2, mode.height / 2), window);
 
-	rotateCube(window);
+	//rotateCube(window);
+	hull_test(window);
 
 	return 0;
 }

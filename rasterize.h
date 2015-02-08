@@ -127,7 +127,7 @@ void rasterize(
 			}
 			
 			// x and y checks should be unnecessary, already clamped in loop ranges`
-			if (/*x < zbuf.columns() && y < zbuf.rows() &&*/ zinterp < zbuf(height - y, x))
+			if (x < zbuf.columns() && y < zbuf.rows() && zinterp < zbuf(height - y, x))
 			{
 				zbuf(height - y, x) = zinterp;
 				VertexOut interpolant = perspectiveCorrectBaryInterp(a, b, c, bary, ws);			

@@ -1,13 +1,14 @@
 #pragma once
 
+#include "array2d.h"
 #include "image.h"
-#include "vec.h"
+#include "vec2.h"
 #include "util.h"
 
 
 // Draws a non-anti-aliased line to the image.
 //
-void drawLine2D(Vec const &start, Vec const &end, Image &image, ColorRGBA color)
+void drawLine2D(vec2 start, vec2 end, Array2D<ColorRGBA> &image, ColorRGBA color)
 {
 	// TODO replace with Bresenham's Algorithm to avoid floating point
 
@@ -30,7 +31,7 @@ void drawLine2D(Vec const &start, Vec const &end, Image &image, ColorRGBA color)
 		int yr = y + 0.5;
 		if ((xr >= 0) && (xr < image.columns()) && (yr >= 0) && (yr < image.rows()))
 		{
-			image(xr, yr) = color;
+			image(yr, xr) = color;
 		}
 		x += xstep;
 		y += ystep;

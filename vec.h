@@ -40,6 +40,11 @@ public:
 		return sqrt(length2());
 	}
 
+	float maxXYZEl() const
+	{
+		return std::max({x, y, z});
+	}
+
 	Vec normalized() const
 	{
 		float len2 = length2();
@@ -124,6 +129,11 @@ Vec vmax(Vec const &a, Vec const &b)
 Vec vmin(Vec const &a, Vec const &b)
 {
 	return Vec(min(a.x, b.x), min(a.y, b.y), min(a.z, b.z));
+}
+
+Vec vabs(Vec a)
+{
+	return Vec(fabs(a.x), fabs(a.y), fabs(a.z), fabs(a.w));
 }
 
 bool operator<(Vec const &a, Vec const &b)
