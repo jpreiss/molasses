@@ -355,7 +355,7 @@ void rotateCube(sf::RenderWindow &window)
 				vertices[j].coord = {vertices[j].vertex};
 				vertices[j].coord.z = 0;
 				vertices[j].coord.w = 0;
-				std::cout << vertices[j].coord;
+				//std::cout << vertices[j].coord;
 
 				shaded[j] = vertShade(vertices[j], global);
 			}
