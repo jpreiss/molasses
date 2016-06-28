@@ -8,7 +8,7 @@
 
 // Draws a non-anti-aliased line to the image.
 //
-void drawLine2D(vec2 start, vec2 end, Array2D<ColorRGBA> &image, ColorRGBA color)
+void drawLine2D(Vec const &start, Vec const &end, Array2D<ColorRGBA> &image, ColorRGBA color)
 {
 	// TODO replace with Bresenham's Algorithm to avoid floating point
 

@@ -1,5 +1,4 @@
 #include <SFML/Graphics.hpp>
-#include "line2d.h"
 #include "line.h"
 #include "projection.h"
 #include "math.h"
@@ -9,8 +8,6 @@
 #include "texture.h"
 #include "objfile.h"
 #include "bounds.h"
-#include "randomvec.h"
-#include "hull.h"
 #include <iostream>
 #include <iomanip>
 #include <sstream>
@@ -383,104 +380,6 @@ void rotateCube(sf::RenderWindow &window)
 	}
 }
 
-void hull_test(sf::RenderWindow &window)
-{
-	auto size = window.getSize();
-	int width = size.x;
-	int height = size.y;
-
-	vec2 mins = vec2::zero();
-	vec2 maxs = {(float)width, (float)height};
-
-	int NPTS = 100;
-	std::vector<vec2> pts(NPTS);
-	std::vector<vec2> hull;
-	Array2D<ColorRGBA> fragments(height, width);
-
-	auto regenerate = [&]()
-	{
-		std::fill(fragments.begin(), fragments.end(), ColorRGBA(0,0,0));
-		random_uniform(mins, maxs, pts.begin(), pts.end());
-		hull = convex_hull(pts.data(), pts.size());
-	};
-
-	regenerate();
-
-
-	sf::Texture screen;
-	screen.create(width, height);
-	sf::Sprite sprite;
-	sprite.setTexture(screen);
-
-	while (window.isOpen())
-	{
-		sf::Event event;
-		while (window.pollEvent(event))
-		{
-			if (event.type == sf::Event::Closed) {
-				window.close();
-			}
-			else if (event.type == sf::Event::KeyPressed)
-			{
-				if (event.key.code == sf::Keyboard::P) {
-					screen.copyToImage().saveToFile("../../molasses.png");
-				}
-				else if (event.key.code == sf::Keyboard::Q) {
-					window.close();
-				}
-				else if (event.key.code == sf::Keyboard::H) {
-					regenerate();
-				}
-			}
-			else if (event.type == sf::Event::MouseButtonPressed)
-			{
-				//mix = 1.0;
-			}
-		}
-
-		ColorRGBA green(0x22, 0xFF, 0xBB);
-		ColorRGBA red(0xFF, 0, 0);
-		ColorRGBA white(0xFF, 0xFF, 0xFF);
-
-		auto fat_point = [](Array2D<ColorRGBA> &img, vec2 pt, ColorRGBA color)
-		{
-			img(pt.y - 1, pt.x - 1) = color;
-			img(pt.y + 0, pt.x - 1) = color;
-			img(pt.y + 1, pt.x - 1) = color;
-
-			img(pt.y - 1, pt.x) = color;
-			img(pt.y + 0, pt.x) = color;
-			img(pt.y + 1, pt.x) = color;
-
-			img(pt.y - 1, pt.x + 1) = color;
-			img(pt.y + 0, pt.x + 1) = color;
-			img(pt.y + 1, pt.x + 1) = color;
-		};
-
-		for (vec2 pt : pts) {
-			fat_point(fragments, pt, green);
-		}
-
-		auto p0 = hull.begin();
-		auto p1 = p0 + 1;
-		auto hend = hull.end();
-		for (; p1 != hend; ++p0, ++p1) {
-			drawLine2D(*p0, *p1, fragments, white);
-		}
-		drawLine2D(*p0, *hull.begin(), fragments, white);
-
-		for (vec2 pt : hull) {
-			fat_point(fragments, pt, red);
-		}
-
-		screen.update((sf::Uint8 const *)fragments.data(), width, height, 0, 0);
-
-		window.clear();
-		window.draw(sprite);
-		window.display();
-	}
-}
-
 int main()
 {
 	auto modes = sf::VideoMode::getFullscreenModes();
@@ -500,8 +399,7 @@ int main()
 
 	sf::Mouse::setPosition(sf::Vector2i(mode.width / 2, mode.height / 2), window);
 
-	//rotateCube(window);
-	hull_test(window);
+	rotateCube(window);
 
 	return 0;
 }
