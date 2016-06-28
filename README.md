@@ -19,8 +19,6 @@ Game-style controls:
     Space - up
     Ctrl - down
 
-It only compiles on Windows currently because it has no Make file and it is not tested on POSIX compilers, but it is fundamentally platform-independent so that will be easy to fix when I get time.
-
 Here's the current status.
 The framerate is already poor just running per-pixel Phong lighting on the Teapot with a single light.
 Until I can speed it up, I don't want to continue with more advanced gfx stuff like shadows, bump mapping, etc.
